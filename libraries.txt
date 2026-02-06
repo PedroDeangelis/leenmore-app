@@ -1,0 +1,13 @@
+react query
+jotai
+react router
+framer motion
+Material UI
+Tailwind CSS
+Styled Componets
+Supabase - o3m*GOftJuq%
+Material UI Icons
+React Loading Skeleton
+https://polished.js.org/docs/#lighten
+USePapaParse
+momentsj
