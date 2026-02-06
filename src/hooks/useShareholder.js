@@ -16,7 +16,7 @@ const getShareholdersFromProject = async ({ queryKey }) => {
 export const useShareholdersFromProject = (id) => {
     return useQuery(
         ["shareholdersFromProject", id],
-        getShareholdersFromProject
+        getShareholdersFromProject,
     );
 };
 
@@ -40,7 +40,7 @@ const insertShareholdersList = async (data) => {
                 current.project_id == shareholder.project_id &&
                 current.registration == shareholder.registration &&
                 current.no == shareholder.no &&
-                current.shares == shareholder.shares
+                current.shares == shareholder.shares,
         );
 
         if (!currentShareholder) {
@@ -54,7 +54,7 @@ const insertShareholdersList = async (data) => {
 
     //remove false values
     formatedShareholders = formatedShareholders.filter(
-        (shareholder) => shareholder
+        (shareholder) => shareholder,
     );
 
     if (formatedShareholders?.length) {
@@ -79,7 +79,7 @@ export const useShareholderInsert = (data) => {
                 queryClient.invalidateQueries("AllSubmissionsByFilter");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -87,7 +87,7 @@ export const useShareholderInsert = (data) => {
 
 const updateShareholders = async ({ formatedShareholders: shareholders }) => {
     const uniqueShareholders = shareholders.filter(
-        (s, index, self) => index === self.findIndex((t) => t.id === s.id)
+        (s, index, self) => index === self.findIndex((t) => t.id === s.id),
     );
 
     console.log("uniqueShareholders", uniqueShareholders);
@@ -111,7 +111,7 @@ export const useShareholderUpdate = (data) => {
                 queryClient.invalidateQueries();
                 return data;
             },
-        }
+        },
     );
 };
 //Update Shareholder And Submission List
@@ -147,7 +147,7 @@ export const useShareholderAndSubmissionUpdate = (data) => {
                 queryClient.invalidateQueries("AllSubmissionsByFilter");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -173,7 +173,7 @@ const getShareholderFromWorker = async ({ queryKey }) => {
 export const useShareholderFromWorker = (id, user) => {
     return useQuery(
         ["ShareholderFromWorker", id, user],
-        getShareholderFromWorker
+        getShareholderFromWorker,
     );
 };
 
@@ -220,7 +220,7 @@ export const useShareholderDelete = () => {
                 queryClient.invalidateQueries("ProjectSingleWithShareholders");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -245,6 +245,60 @@ export const useShareholderLastResultUpdate = () => {
                 queryClient.invalidateQueries("ProjectSingleWithShareholders");
                 return data;
             },
-        }
+        },
     );
+};
+
+// useAllShareholdersByUser
+const getAllShareholdersByUser = async ({ queryKey }) => {
+    const user = queryKey[1];
+    if (!user) return false;
+
+    // 1) Get ONLY publish project IDs where at least one shareholder has this user
+    const { data: projects, error: pErr } = await supabase
+        .from("project")
+        .select(`id, shareholder!inner(id)`) // inner join ensures project must have matching shareholder
+        .eq("status", "publish")
+        .contains("shareholder.user", [user]);
+
+    if (pErr) {
+        console.error("Project id query error:", pErr);
+        return false;
+    }
+
+    const projectIds = [...new Set((projects || []).map((p) => p.id))];
+    if (!projectIds.length) return [];
+
+    // 2) Get ALL shareholders for those projects (no user filter here)
+    const { data: shareholders, error: sErr } = await supabase
+        .from("shareholder")
+        .select(
+            `
+      *,
+      project:project_id (
+        id,
+        title,
+        results
+      )
+    `,
+        )
+        .in("project_id", projectIds)
+        .order("id", { ascending: false });
+
+    if (sErr) {
+        console.error("Shareholder query error:", sErr);
+        return false;
+    }
+
+    // flatten project fields like you were doing
+    return (shareholders || []).map((s) => ({
+        ...s,
+        project_id: s.project?.id ?? s.project_id,
+        project_title: s.project?.title,
+        project_results: s.project?.results,
+    }));
+};
+
+export const useAllShareholdersByUser = (user) => {
+    return useQuery(["AllShareholdersByUser", user], getAllShareholdersByUser);
 };
