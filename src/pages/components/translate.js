@@ -178,6 +178,8 @@ export default function transl(char) {
         "download zip file": "zip 파일 다운로드",
         "search for receipt": "영수증 검색",
         amount: "금액",
+        "amount used": "사용 금액",
+        "remarks notes": "비고",
         "view receipt": "영수증 보기",
         "view all receipt": "영수증 보기",
         "number of submissions": "제출 개수",
@@ -270,6 +272,10 @@ export default function transl(char) {
         cancel: "취소",
         "search shareholders": "주주 검색하기",
         page: "페이지",
+        "insert link button": "링크버튼 삽입",
+        "website address": "사이트 주소",
+        content: "내용",
+        "view link": "링크 보기",
     };
 
     return map[key] ? map[key] : char;

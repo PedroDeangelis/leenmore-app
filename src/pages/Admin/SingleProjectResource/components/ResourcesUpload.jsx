@@ -22,20 +22,9 @@ function ResourcesUpload({ project }) {
             },
             {
                 onSuccess: (data) => {
-                    // toast.success(transl("File uploaded successfully"), {
-                    //     position: "top-right",
-                    //     autoClose: 4000,
-                    //     hideProgressBar: false,
-                    //     closeOnClick: true,
-                    //     pauseOnHover: true,
-                    //     draggable: true,
-                    //     progress: undefined,
-                    // });
-                    // console.log("data", data);
-
                     handleResourceCreate(filename, data);
                 },
-            }
+            },
         );
     };
 
@@ -47,6 +36,7 @@ function ResourcesUpload({ project }) {
                     path: path,
                     attachedTo: "project",
                     parentId: project.id,
+                    type: "file",
                 },
             },
             {
@@ -63,7 +53,7 @@ function ResourcesUpload({ project }) {
 
                     setIsLoading(false);
                 },
-            }
+            },
         );
     };
 

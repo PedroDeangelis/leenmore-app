@@ -37,8 +37,8 @@ const createExcelForReceipts = async (receipts) => {
             "제출 날짜",
             "사용내역",
             "사용처",
-            "금액",
-            "승인번호",
+            "사용 금액",
+            "비고",
             "특이사항",
         ]);
 
@@ -88,19 +88,22 @@ const createExcelForReceipts = async (receipts) => {
             worksheet.getCell(`B${index + 3}`).value = new Date(date);
             worksheet.getCell(`B${index + 3}`).numFmt = 'MM"월" DD"일"';
 
-            worksheet.getCell(`C${index + 3}`).value = new Date(receipt.created_at);
+            worksheet.getCell(`C${index + 3}`).value = new Date(
+                receipt.created_at,
+            );
             worksheet.getCell(`C${index + 3}`).numFmt = 'MM"월" DD"일"';
 
             worksheet.getCell(`D${index + 3}`).value = usage_history;
             worksheet.getCell(`E${index + 3}`).value = where_used;
-            worksheet.getCell(`F${index + 3}`).value = "";
 
             var cleanAmount = amount.replace(",", "");
             cleanAmount = cleanAmount.replace(".", "");
             cleanAmount = parseInt(cleanAmount);
-            worksheet.getCell(`G${index + 3}`).value = cleanAmount;
-            worksheet.getCell(`G${index + 3}`).numFmt =
+            worksheet.getCell(`F${index + 3}`).value = cleanAmount;
+            worksheet.getCell(`F${index + 3}`).numFmt =
                 '"₩"#,##0;[Red]-"₩"#,##0';
+
+            worksheet.getCell(`G${index + 3}`).value = "";
 
             worksheet.getCell(`H${index + 3}`).value = note;
         });

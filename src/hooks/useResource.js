@@ -31,7 +31,7 @@ export const useResourceCreate = (resource) => {
                 queryClient.invalidateQueries("ResourceList");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -86,7 +86,7 @@ export const useResourceDelete = (resource_id) => {
                 queryClient.invalidateQueries("ResourceList");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -116,7 +116,7 @@ export const useResourceUpdate = (resource) => {
                 queryClient.invalidateQueries("ResourceList");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -132,8 +132,8 @@ const updateResources = async ({ resources }) => {
                     supabase
                         .from("resource")
                         .update(resource)
-                        .eq("id", resource.id) // Using the 'id' field to specify the row
-            )
+                        .eq("id", resource.id), // Using the 'id' field to specify the row
+            ),
         );
 
         // Check for any errors in the responses
@@ -160,6 +160,41 @@ export const useMultiResourcesUpdate = (resources) => {
                 queryClient.invalidateQueries("ResourceList");
                 return data;
             },
-        }
+        },
+    );
+};
+
+// Insert Link Resource
+const insertLinkResource = async ({ resource }) => {
+    const { data, error } = await supabase.from("resource").insert([
+        {
+            title: resource.title,
+            url: resource.url,
+            type: "link",
+            parentId: resource.parentId,
+            attachedTo: "project",
+        },
+    ]);
+
+    if (error) {
+        console.log("error", error);
+        return { data: data, error: error };
+    }
+
+    return true;
+};
+
+export const useInsertLinkResource = (resource) => {
+    const queryClient = useQueryClient();
+    return useMutation(
+        async (resource) => {
+            return await insertLinkResource(resource);
+        },
+        {
+            onSuccess: (data) => {
+                queryClient.invalidateQueries("ResourceList");
+                return data;
+            },
+        },
     );
 };

@@ -13,6 +13,7 @@ import transl from "./translate";
 import { toast } from "react-toastify";
 import SearchIcon from "@mui/icons-material/Search";
 import ResourcesListItem from "./ResourcesListItem";
+import ResourcesListLinkItem from "./ResourcesListLinkItem";
 import ResourcesOrganizer from "../Admin/ProjectResources/components/ResourcesOrganizer";
 
 function ResourcesList({ projectID, deleteOption }) {
@@ -77,6 +78,14 @@ function ResourcesList({ projectID, deleteOption }) {
         );
     }
 
+    const isLinkResource = (resource) => {
+        if (resource?.type === "link" || resource?.url) {
+            return true;
+        }
+        const path = resource?.path || "";
+        return /^https?:\/\//i.test(path);
+    };
+
     return (
         <div>
             {deleteOption && (
@@ -109,14 +118,23 @@ function ResourcesList({ projectID, deleteOption }) {
                 </FormControl>
             </Paper>
 
-            {resourcesFiltered.map((resource) => (
-                <ResourcesListItem
-                    key={resource.id}
-                    resource={resource}
-                    handleDelete={handleDelete}
-                    deleteOption={deleteOption}
-                />
-            ))}
+            {resourcesFiltered.map((resource) =>
+                isLinkResource(resource) ? (
+                    <ResourcesListLinkItem
+                        key={resource.id}
+                        resource={resource}
+                        handleDelete={handleDelete}
+                        deleteOption={deleteOption}
+                    />
+                ) : (
+                    <ResourcesListItem
+                        key={resource.id}
+                        resource={resource}
+                        handleDelete={handleDelete}
+                        deleteOption={deleteOption}
+                    />
+                )
+            )}
         </div>
     );
 }

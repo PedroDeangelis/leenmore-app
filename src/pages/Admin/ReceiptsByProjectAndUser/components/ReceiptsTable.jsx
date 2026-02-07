@@ -63,10 +63,10 @@ function ReceiptsTable({
                                 {transl("where were used")}
                             </TableCell>
                             <TableCell className="bg-slate-100">
-                                {transl("amount")}
+                                {transl("amount used")}
                             </TableCell>
                             <TableCell className="bg-slate-100">
-                                {transl("note")}
+                                {transl("remarks notes")}
                             </TableCell>
                             <TableCell
                                 className="bg-slate-100"

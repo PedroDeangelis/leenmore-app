@@ -10,6 +10,22 @@ function ResourcesListItem({ resource, handleDelete, deleteOption }) {
     const resourceUpdateMutation = useResourceUpdate();
     const [title, setTitle] = useState(resource.title);
 
+    const getResourcePath = (resource) => resource?.url || resource?.path || "";
+    const isExternalLink = (value) => /^https?:\/\//i.test(value);
+    const getResourceUrl = (resource) => {
+        const rawPath = getResourcePath(resource);
+        if (!rawPath) {
+            return "";
+        }
+        if (isExternalLink(rawPath)) {
+            return rawPath;
+        }
+        const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
+        return `${storagePath}${rawPath}`;
+    };
+
+    const resourceUrl = getResourceUrl(resource);
+
     const handleSave = (resource) => {
         if (!title) {
             toast.error(transl("title is required"), {
@@ -57,14 +73,21 @@ function ResourcesListItem({ resource, handleDelete, deleteOption }) {
         );
     };
 
-    const handleDownload = (path, filename) => {
-        const storagePath = process.env.REACT_APP_STORAGE_PATH;
-        const url = `${storagePath}${path}`;
+    const handleDownload = (resource) => {
+        const rawPath = getResourcePath(resource);
+        if (!rawPath) {
+            return;
+        }
 
-        fetch(url)
+        if (isExternalLink(rawPath)) {
+            window.open(rawPath, "_blank");
+            return;
+        }
+
+        fetch(resourceUrl)
             .then((response) => response.blob())
             .then((blob) => {
-                saveAs(blob, filename);
+                saveAs(blob, resource.title);
             });
     };
 
@@ -106,7 +129,7 @@ function ResourcesListItem({ resource, handleDelete, deleteOption }) {
                 <Button
                     sx={{ padding: 0, minWidth: 0 }}
                     onClick={() => {
-                        handleDownload(resource.path, resource.title);
+                        handleDownload(resource);
                     }}
                 >
                     <DownloadIcon />
@@ -117,7 +140,7 @@ function ResourcesListItem({ resource, handleDelete, deleteOption }) {
                         className="h-full absolute top-0 left-0"
                         onClick={() => {
                             window.open(
-                                `${process.env.REACT_APP_STORAGE_PATH}${resource.path}`,
+                                resourceUrl,
                                 "_blank"
                             );
                         }}
@@ -130,7 +153,7 @@ function ResourcesListItem({ resource, handleDelete, deleteOption }) {
                             size="small"
                             onClick={() => {
                                 window.open(
-                                    `${process.env.REACT_APP_STORAGE_PATH}${resource.path}`,
+                                    resourceUrl,
                                     "_blank"
                                 );
                             }}

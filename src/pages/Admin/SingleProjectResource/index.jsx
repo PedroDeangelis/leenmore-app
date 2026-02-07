@@ -6,6 +6,7 @@ import transl from "../../components/translate";
 import { Button, CircularProgress } from "@mui/material";
 import ResourcesUpload from "./components/ResourcesUpload";
 import ResourcesList from "../../components/ResourcesList";
+import ResourcesLinkCreate from "./components/ResourcesLinkCreate";
 
 function SingleProjectResource() {
     const { project_id } = useParams();
@@ -23,7 +24,10 @@ function SingleProjectResource() {
                 </Button>
             </Header>
             <div className="grid grid-cols-2 gap-10 items-start">
-                <ResourcesUpload project={project} />
+                <div>
+                    <ResourcesLinkCreate project={project} />
+                    <ResourcesUpload project={project} />
+                </div>
                 <ResourcesList projectID={project.id} deleteOption={true} />
             </div>
         </div>
