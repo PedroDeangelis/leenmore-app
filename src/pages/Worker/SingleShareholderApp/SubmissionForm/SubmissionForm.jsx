@@ -1,12 +1,12 @@
 import {
-	Alert,
-	Button,
-	CircularProgress,
-	FormControl,
-	FormHelperText,
-	InputLabel,
-	OutlinedInput,
-	TextField,
+    Alert,
+    Button,
+    CircularProgress,
+    FormControl,
+    FormHelperText,
+    InputLabel,
+    OutlinedInput,
+    TextField,
 } from "@mui/material";
 import moment from "moment/moment";
 import React, { useEffect, useState } from "react";
@@ -18,6 +18,7 @@ import transl from "../../../components/translate";
 import SelectResultsProject from "./SelectResultsProject";
 import SubmissionFileUpload from "./SubmissionFileUpload";
 import PhoneNumberInput from "./PhoneNumberInput";
+import SubmissionPrivacyConscentFileUpload from "./SubmissionPrivacyConscentFileUpload";
 
 function SubmissionForm({
     project_id,
@@ -28,22 +29,25 @@ function SubmissionForm({
     shareholder,
     stayOnThePage = false,
 }) {
-	const [fResult, setFResult] = useState("");
-	const [fNote, setFNote] = useState("");
-	const [fContact, setFContact] = useState({
-		value: "",
-		isValid: true,
-	});
-	const [submitingForm, setSubmitingForm] = useState(false);
-	const [alertNotes, setAlertNotes] = useState(false);
-	const [alertContactWorker, setAlertContactWorker] = useState(false);
-	const [alertResult, setAlertResult] = useState(false);
-	const [alertAttachment, setAlertAttachment] = useState(false);
-	const [alertDate, setAlertDate] = useState(false);
-	const [fDate, setFDate] = useState(moment().format("Y-MM-DD"));
-	const [listOfUploadedFiles, setListOfUploadedFiles] = useState([]);
-	const { data: project, isLoading } = useProject(project_id);
-	const submissionCreateMutation = useSubmissionCreate();
+    const [fResult, setFResult] = useState("");
+    const [fNote, setFNote] = useState("");
+    const [fContact, setFContact] = useState({
+        value: "",
+        isValid: true,
+    });
+    const [submitingForm, setSubmitingForm] = useState(false);
+    const [alertNotes, setAlertNotes] = useState(false);
+    const [alertContactWorker, setAlertContactWorker] = useState(false);
+    const [alertResult, setAlertResult] = useState(false);
+    const [alertAttachment, setAlertAttachment] = useState(false);
+    const [alertDate, setAlertDate] = useState(false);
+    const [fDate, setFDate] = useState(moment().format("Y-MM-DD"));
+    const [listOfUploadedFiles, setListOfUploadedFiles] = useState([]);
+    const [privacyConsentCheckbox, setPrivacyConsentCheckbox] = useState(null);
+    const [privacyConsentFilePath, setPrivacyConsentFilePath] = useState(null);
+
+    const { data: project, isLoading } = useProject(project_id);
+    const submissionCreateMutation = useSubmissionCreate();
 
     const navigate = useNavigate();
 
@@ -55,31 +59,31 @@ function SubmissionForm({
     const handleSubmit = (e) => {
         e.preventDefault();
 
-		let isRefused = false;
+        let isRefused = false;
 
-		if (!fDate) {
-			setAlertDate(true);
-			isRefused = true;
-		} else {
-			setAlertDate(false);
-		}
-
-		if (!fResult) {
-			setAlertResult(true);
-			isRefused = true;
-		} else {
-			setAlertResult(false);
+        if (!fDate) {
+            setAlertDate(true);
+            isRefused = true;
+        } else {
+            setAlertDate(false);
         }
 
-		if (
-			project?.results[fResult]?.includes('contactRequired":true') &&
-			(!fContact.value || !fContact.isValid)
-		) {
-			setAlertContactWorker(true);
-			isRefused = true;
-		} else {
-			setAlertContactWorker(false);
-		}
+        if (!fResult) {
+            setAlertResult(true);
+            isRefused = true;
+        } else {
+            setAlertResult(false);
+        }
+
+        if (
+            project?.results[fResult]?.includes('contactRequired":true') &&
+            (!fContact.value || !fContact.isValid)
+        ) {
+            setAlertContactWorker(true);
+            isRefused = true;
+        } else {
+            setAlertContactWorker(false);
+        }
 
         if (!fNote) {
             setAlertNotes(true);
@@ -111,12 +115,13 @@ function SubmissionForm({
                     user_name: user,
                     shareholder_id: shareholder.id,
                     project_id: project_id,
-					date: fDate,
-					result: fResult,
-					contact_worker: fContact.value,
-					note: fNote,
-					files: listOfUploadedFiles,
-				},
+                    date: fDate,
+                    result: fResult,
+                    contact_worker: fContact.value,
+                    note: fNote,
+                    files: listOfUploadedFiles,
+                    privacy_consent_file: privacyConsentFilePath,
+                },
             },
             {
                 onSuccess: (data) => {
@@ -134,7 +139,7 @@ function SubmissionForm({
                         progress: undefined,
                     });
                 },
-            }
+            },
         );
     };
 
@@ -144,6 +149,8 @@ function SubmissionForm({
         setListOfUploadedFiles([]);
         setFResult("");
         setAlertNotes("");
+        setPrivacyConsentCheckbox(null);
+        setPrivacyConsentFilePath(null);
         // setSubmitingForm('');
     }, []);
 
@@ -151,31 +158,31 @@ function SubmissionForm({
         <>
             <form onSubmit={handleSubmit} className="pt-7">
                 {/* DATE */}
-				<FormControl
-					variant="outlined"
-					className="w-full "
-					sx={{ mb: "20px" }}
-				>
-					<InputLabel htmlFor="date-outlined-label">
-						{transl("Date")}
-					</InputLabel>
-					<OutlinedInput
-						id="date-outlined-label"
-						value={fDate}
-						type={`date`}
-						onChange={(e) => {
-							setFDate(e.target.value);
-							if (alertDate) setAlertDate(false);
-						}}
-						required
-						label={transl("Date")}
-					/>
-					{alertDate && (
-						<FormHelperText error sx={{ ml: 0 }}>
-							실제 사용한 영수증 날짜를 기입해주세요.
-						</FormHelperText>
-					)}
-				</FormControl>
+                <FormControl
+                    variant="outlined"
+                    className="w-full "
+                    sx={{ mb: "20px" }}
+                >
+                    <InputLabel htmlFor="date-outlined-label">
+                        {transl("Date")}
+                    </InputLabel>
+                    <OutlinedInput
+                        id="date-outlined-label"
+                        value={fDate}
+                        type={`date`}
+                        onChange={(e) => {
+                            setFDate(e.target.value);
+                            if (alertDate) setAlertDate(false);
+                        }}
+                        required
+                        label={transl("Date")}
+                    />
+                    {alertDate && (
+                        <FormHelperText error sx={{ ml: 0 }}>
+                            실제 사용한 영수증 날짜를 기입해주세요.
+                        </FormHelperText>
+                    )}
+                </FormControl>
                 {/* RESULTS */}
                 {alertResult && (
                     <Alert severity="error">
@@ -191,22 +198,30 @@ function SubmissionForm({
                 {alertContactWorker && (
                     <Alert severity="error">
                         {transl(
-                            "The current result requires contact information for the worker"
+                            "The current result requires contact information for the worker",
                         )}
                     </Alert>
                 )}
-				<PhoneNumberInput
-					required={project?.results[fResult]?.includes(
-						'contactRequired":true'
-					)}
-					onChange={(payload) => {
-						setFContact(payload);
-						if (alertContactWorker && payload.isValid) {
-							setAlertContactWorker(false);
-						}
-					}}
-					showError={alertContactWorker}
-				/>
+                <SubmissionPrivacyConscentFileUpload
+                    privacyConsentCheckbox={privacyConsentCheckbox}
+                    setPrivacyConsentCheckbox={setPrivacyConsentCheckbox}
+                    project={project}
+                    filename={filename}
+                    privacyConsentFilePath={privacyConsentFilePath}
+                    setPrivacyConsentFilePath={setPrivacyConsentFilePath}
+                />
+                <PhoneNumberInput
+                    required={project?.results[fResult]?.includes(
+                        'contactRequired":true',
+                    )}
+                    onChange={(payload) => {
+                        setFContact(payload);
+                        if (alertContactWorker && payload.isValid) {
+                            setAlertContactWorker(false);
+                        }
+                    }}
+                    showError={alertContactWorker}
+                />
                 {/* NOTES */}
                 {alertNotes && (
                     <Alert severity="error">
@@ -239,7 +254,7 @@ function SubmissionForm({
                         {alertAttachment && (
                             <Alert severity="error">
                                 {transl(
-                                    "Please attach the required file before submitting the form"
+                                    "Please attach the required file before submitting the form",
                                 )}
                             </Alert>
                         )}

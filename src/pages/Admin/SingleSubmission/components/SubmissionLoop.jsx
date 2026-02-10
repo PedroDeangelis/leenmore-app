@@ -10,7 +10,6 @@ import SubmissionLoopItem from "./SubmissionLoopItem";
 import SubmissionInfo from "./SubmissionInfo";
 import ReceiptAttachmentPreview from "../../ReceiptsByProjectAndUser/components/ReceiptAttachmentPreview";
 
-
 const headerTH = "py-6 text-sm tracking-wider text-gray-500";
 
 function SubmissionLoop({ data, projectResults }) {
@@ -22,7 +21,7 @@ function SubmissionLoop({ data, projectResults }) {
     const lastSubmissionRef = useRef();
     const updateShaholdersAndSubmissionMutation =
         useShareholderAndSubmissionUpdate();
-        
+
     const [attachmentPreview, setAttachmentPreview] = useState(null);
 
     const handleOpenDialog = () => {
@@ -64,7 +63,7 @@ function SubmissionLoop({ data, projectResults }) {
                                 pauseOnHover: true,
                                 draggable: true,
                                 progress: undefined,
-                            }
+                            },
                         );
                     } else {
                         toast.success(
@@ -77,12 +76,12 @@ function SubmissionLoop({ data, projectResults }) {
                                 pauseOnHover: true,
                                 draggable: true,
                                 progress: undefined,
-                            }
+                            },
                         );
                     }
                     handleCloseEditing();
                 },
-            }
+            },
         );
     };
 
@@ -92,7 +91,7 @@ function SubmissionLoop({ data, projectResults }) {
                 setLimitDisplay((prev) => prev + 20);
             }
         },
-        { threshold: 1 }
+        { threshold: 1 },
     );
 
     useEffect(() => {
@@ -101,9 +100,9 @@ function SubmissionLoop({ data, projectResults }) {
         }
     }, [lastSubmissionRef]);
 
-	return (
-		<>
-			<div className="mb-10 flex itemms-stretch gap-6">
+    return (
+        <>
+            <div className="mb-10 flex itemms-stretch gap-6">
                 <div className="w-full">
                     <div className="mb-3 rounded-lg bg-white shadow-card flex ">
                         <span className={`${headerTH} w-2/12 pl-6`}>
@@ -145,7 +144,9 @@ function SubmissionLoop({ data, projectResults }) {
                                     address={value.shareholder.address}
                                     sex={value.shareholder.sex}
                                     database={value.shareholder.database}
-                                    contact_info={value.shareholder.contact_info}
+                                    contact_info={
+                                        value.shareholder.contact_info
+                                    }
                                     contact_worker={
                                         value.shareholder.contact_worker
                                     }
@@ -155,6 +156,9 @@ function SubmissionLoop({ data, projectResults }) {
                                     result={value.result}
                                     note={value.note}
                                     files={value.files}
+                                    privacyConsentFile={
+                                        value.privacy_consent_file
+                                    }
                                     projectResult={value.project.results}
                                     shareholderValue={value.shareholder}
                                     setAttachmentPreview={setAttachmentPreview}

@@ -40,6 +40,7 @@ import ProjectResourceArchiveApp from "../pages/Worker/ProjectResourceArchiveApp
 import ActivityData from "../pages/Admin/ActivityData";
 import SingleActivityData from "../pages/Admin/SingleActivityData";
 import SearchShareholdersApp from "../pages/Worker/SearchShareholdersApp";
+import EmailToWorker from "../pages/Admin/EmailToWorker";
 
 function Router() {
     const { data, isLoading, isFetching } = useUserisLoggendIn();
@@ -147,6 +148,10 @@ function Router() {
                 {
                     path: "/dashboard/activity-data/:project_id",
                     element: <SingleActivityData />,
+                },
+                {
+                    path: "/dashboard/email-to-worker/",
+                    element: <EmailToWorker />,
                 },
             ],
         },

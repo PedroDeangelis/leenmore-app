@@ -60,10 +60,6 @@ function SearchShareholdersApp() {
     const showNoResults = query && filteredShareholders.length === 0;
     const showResults = query && filteredShareholders.length > 0;
 
-    useEffect(() => {
-        console.log("Shareholders data:", filteredShareholders);
-    }, [filteredShareholders]);
-
     return (
         <div>
             <AppHeader>
@@ -121,15 +117,22 @@ function SearchShareholdersApp() {
                             <div className="mt-2">
                                 {filteredShareholders.map((shareholder) => {
                                     let resultJson =
-                                        shareholder.project_results[
+                                        shareholder.project_results?.[
                                             shareholder.result
-                                        ] || {};
+                                        ] ?? null;
 
-                                    if (resultJson) {
-                                        // conver string to json
-                                        resultJson = JSON.parse(resultJson);
-                                    } else {
-                                        resultJson = false;
+                                    if (typeof resultJson === "string") {
+                                        try {
+                                            // convert string to json
+                                            resultJson = JSON.parse(resultJson);
+                                        } catch (error) {
+                                            resultJson = null;
+                                        }
+                                    } else if (
+                                        resultJson &&
+                                        typeof resultJson !== "object"
+                                    ) {
+                                        resultJson = null;
                                     }
 
                                     return (
@@ -241,7 +244,13 @@ function SearchShareholdersApp() {
                                                             <span className="text-xs block text-slate-500">
                                                                 배정 담당자
                                                             </span>
-                                                            {shareholder.user}
+                                                            {shareholder
+                                                                .user?.[0]
+                                                                ?.length
+                                                                ? shareholder.user
+                                                                : transl(
+                                                                      "vacant",
+                                                                  )}
                                                         </p>
                                                     </div>
                                                 </div>

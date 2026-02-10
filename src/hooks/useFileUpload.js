@@ -257,3 +257,43 @@ export const useResourceUpload = (project, filename, file) => {
         }
     );
 };
+
+// USE PRIVACY CONSENT
+const privacyConsentUpload = async ({ project, filename, file }) => {
+    let response = false;
+
+    await axios
+        .post(
+            `${process.env.REACT_APP_STORAGE_PATH}privacy-consent-file-upload`,
+            {
+                project: project,
+                filename: filename,
+                file: file,
+                auth_key: process.env.REACT_APP_STORAGE_AUTH_KEY,
+            },
+            {
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        )
+        .then((resp) => {
+            response = resp.data;
+        });
+
+    return response;
+};
+
+export const usePrivacyConsentUpload = (project, filename, file) => {
+    return useMutation(
+        async (project, filename, file) => {
+            return await privacyConsentUpload(project, filename, file);
+        },
+        {
+            onSuccess: (data) => {
+                return data;
+            },
+        }
+    );
+};

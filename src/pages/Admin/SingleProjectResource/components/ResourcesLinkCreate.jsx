@@ -66,7 +66,7 @@ function ResourcesLinkCreate({ project }) {
                     setWebsite("");
                     setContent("");
                 },
-            }
+            },
         );
     };
 
@@ -77,7 +77,6 @@ function ResourcesLinkCreate({ project }) {
                 <form onSubmit={handleSubmit}>
                     <TextField
                         required={true}
-                        type="url"
                         label={transl("website address")}
                         variant="outlined"
                         sx={{ width: "100%", mb: 1 }}

@@ -1,7 +1,7 @@
 export default function transl(char) {
     if (process.env?.REACT_APP_EN_VERSION === "development") {
+        return char;
     }
-    return char;
     const key = char.toLowerCase();
     const map = {
         preview: "미리보기",
@@ -276,6 +276,9 @@ export default function transl(char) {
         "website address": "사이트 주소",
         content: "내용",
         "view link": "링크 보기",
+        "privacy consent file": "개인정보 동의",
+        "email to worker": "활동가에게 이메일 보내기",
+        vacant: "담당자 없음",
     };
 
     return map[key] ? map[key] : char;

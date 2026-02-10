@@ -1,5 +1,4 @@
 import {
-	FormControl,
 	FormHelperText,
 	FormLabel,
 	IconButton,
@@ -116,14 +115,8 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
 	const shouldShowError = showError || (touched && !isValid);
 
 	return (
-		<FormControl
-			fullWidth
-			sx={{ mb: "20px" }}
-			error={shouldShowError}
-			required={required}
-			variant="outlined"
-		>
-			<FormLabel sx={{ mb: 1 }}>
+		<div className="w-full" style={{ marginBottom: "20px" }}>
+			<FormLabel sx={{ mb: 1 }} error={shouldShowError} required={required}>
 				{transl("Contact for worker")}
 			</FormLabel>
 			<div className="space-y-3">
@@ -146,6 +139,8 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
 							placeholder="000"
 							inputProps={{ inputMode: "numeric" }}
 							sx={{ width: 90 }}
+							error={shouldShowError}
+							required={required}
 						/>
 						<span className="font-bold">-</span>
 						<OutlinedInput
@@ -162,6 +157,8 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
 							placeholder="0000"
 							inputProps={{ inputMode: "numeric" }}
 							sx={{ width: 90 }}
+							error={shouldShowError}
+							required={required}
 						/>
 						<span className="font-bold">-</span>
 						<OutlinedInput
@@ -178,6 +175,8 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
 							placeholder="0000"
 							inputProps={{ inputMode: "numeric" }}
 							sx={{ width: 90 }}
+							error={shouldShowError}
+							required={required}
 						/>
 						{numbers.length < MAX_NUMBERS && index === 0 && (
 							<IconButton color="primary" onClick={handleAdd}>
@@ -195,12 +194,12 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
 					</div>
 				))}
 			</div>
-			<FormHelperText>
+			<FormHelperText error={shouldShowError}>
 				{shouldShowError
 					? "번호를 올바르게 입력해주세요."
 					: ""}
 			</FormHelperText>
-		</FormControl>
+		</div>
 	);
 }
 
