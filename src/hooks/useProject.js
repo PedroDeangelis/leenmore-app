@@ -32,7 +32,7 @@ const getSingleProjectWithShareholders = async ({ queryKey }) => {
 export const useSingleProjectWithShareholders = (id) => {
     return useQuery(
         ["SingleProjectWithShareholders", id],
-        getSingleProjectWithShareholders
+        getSingleProjectWithShareholders,
     );
 };
 
@@ -110,7 +110,7 @@ export const useProjectCreate = (project) => {
                 queryClient.invalidateQueries("ProjectsList");
                 return data;
             },
-        }
+        },
     );
 };
 
@@ -136,7 +136,7 @@ export const useProjecUpdate = (project_id, meta) => {
                 await queryClient.invalidateQueries("ProjectsList");
                 await queryClient.invalidateQueries("ProjectSingle");
                 await queryClient.invalidateQueries(
-                    "ProjectSingleWithShareholders"
+                    "ProjectSingleWithShareholders",
                 );
                 return data;
             },
@@ -145,7 +145,7 @@ export const useProjecUpdate = (project_id, meta) => {
                 queryClient.refetchQueries("ProjectSingle");
                 queryClient.refetchQueries("ProjectSingleWithShareholders");
             },
-        }
+        },
     );
 };
 
@@ -173,7 +173,7 @@ const getProjectsOfSpecificUser = async ({ queryKey }) => {
 export const useProjectsSpecificUser = (user) => {
     return useQuery(
         ["ProjectsListSpecificUser", user],
-        getProjectsOfSpecificUser
+        getProjectsOfSpecificUser,
     );
 };
 
@@ -187,7 +187,7 @@ const getProjectWithShareholders = async ({ queryKey }) => {
             `
         *,
         shareholder(*),
-        submission(*, is_deleted)`
+        submission(*, is_deleted)`,
         )
         .filter("submission.is_deleted", "eq", false)
         .eq("id", project_id);
@@ -202,15 +202,13 @@ const getProjectWithShareholders = async ({ queryKey }) => {
         }
     }
 
-    console.log("projectData", projectData);
-
     return projectData;
 };
 
 export const useProjectWithShareholders = (id) => {
     return useQuery(
         ["ProjectSingleWithShareholders", id],
-        getProjectWithShareholders
+        getProjectWithShareholders,
     );
 };
 
@@ -241,7 +239,7 @@ const getProjectWithShareholdersByUser = async ({ queryKey }) => {
 export const useProjectWithShareholdersByUser = (id, user) => {
     return useQuery(
         ["ProjectSingleWithShareholdersByUser", id, user],
-        getProjectWithShareholdersByUser
+        getProjectWithShareholdersByUser,
     );
 };
 

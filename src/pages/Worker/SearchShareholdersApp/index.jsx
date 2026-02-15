@@ -247,7 +247,9 @@ function SearchShareholdersApp() {
                                                             {shareholder
                                                                 .user?.[0]
                                                                 ?.length
-                                                                ? shareholder.user
+                                                                ? shareholder.user.join(
+                                                                      " / ",
+                                                                  )
                                                                 : transl(
                                                                       "vacant",
                                                                   )}

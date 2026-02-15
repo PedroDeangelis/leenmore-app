@@ -1,58 +1,93 @@
-import React from "react";
-import Header from "../components/Header";
+import React, { useEffect, useState } from "react";
 import transl from "../../components/translate";
-import { Button, Checkbox, FormControlLabel } from "@mui/material";
+import Header from "../components/Header";
+import { useAllProjectsSimpleList } from "../../../hooks/useProject";
+import SearchProjectBar from "../components/SearchProjectBar";
 import { Link } from "react-router-dom";
 
 function EmailToWorker() {
-    return <></>;
+    const [searchProject, setSearchProject] = useState("");
+    const [searchProjectFilter, setSearchProjectFilter] = useState([]);
+    const { data: projects, isLoading } = useAllProjectsSimpleList();
+
+    useEffect(() => {
+        if (projects) {
+            setSearchProjectFilter(
+                projects
+                    .filter((project) =>
+                        project.title
+                            .toLowerCase()
+                            .includes(searchProject.toLowerCase()),
+                    )
+                    .sort((projectA, projectB) => {
+                        const now = new Date();
+
+                        // If both projects have no end date, they are considered equal.
+                        if (!projectA.end_date && !projectB.end_date) {
+                            return 0;
+                        }
+
+                        // If projectA has no end date, it comes after projectB.
+                        if (!projectA.end_date) {
+                            return 1;
+                        }
+
+                        // If projectB has no end date, it comes after projectA.
+                        if (!projectB.end_date) {
+                            return -1;
+                        }
+
+                        const endDateA = new Date(projectA.end_date);
+                        const endDateB = new Date(projectB.end_date);
+
+                        // If both projects have expired end dates, sort by closest end date.
+                        if (endDateA < now && endDateB < now) {
+                            return endDateB - endDateA;
+                        }
+
+                        // If projectA has an expired end date, it comes after projectB.
+                        if (endDateA < now) {
+                            return 1;
+                        }
+
+                        // If projectB has an expired end date, it comes after projectA.
+                        if (endDateB < now) {
+                            return -1;
+                        }
+
+                        // Both projects have future end dates, sort by closest end date.
+                        return endDateA - endDateB;
+                    }),
+            );
+        }
+    }, [searchProject, projects]);
 
     return (
         <div>
-            <Header title={`${transl("Email to Worker")}: Project name here`}>
-                <Button variant="text">
-                    <Link to={`/dashboard/email-to-worker`}>
-                        {transl("Go Back")}
-                    </Link>
-                </Button>
-            </Header>
-            <div className="grid grid-cols-2 gap-20">
-                <div>
-                    <h2 className="text-lg font-semibold mb-4">
-                        List of Workers
-                    </h2>
-                    <div className="border-slate-300 border px-4 mb-4 rounded-md">
-                        <FormControlLabel
-                            className="flex items-center"
-                            control={<Checkbox />}
-                            label={"강근영 (gykang512@naver.com)"}
-                        />
-                    </div>
-                    <div className="border-slate-300 border px-4 mb-4 rounded-md">
-                        <FormControlLabel
-                            className="flex items-center"
-                            control={<Checkbox />}
-                            label={"강근태 (kanggt0916@gmail.com)"}
-                        />
-                    </div>
-                    <div className="border-slate-300 border px-4 mb-4 rounded-md">
-                        <FormControlLabel
-                            className="flex items-center"
-                            control={<Checkbox />}
-                            label={"고슬기 (goseulki9418@gmail.com)"}
-                        />
-                    </div>
-                </div>
-                <div>
-                    {/* Add a text area to compose the email */}
-                    <h2 className="text-lg font-semibold mb-4">
-                        {transl("Compose Email")}
-                    </h2>
-                    <textarea
-                        className="w-full h-40 border-slate-300 border rounded-md p-2"
-                        placeholder={transl("Write your email here...")}
-                    ></textarea>
-                </div>
+            <Header title={transl("Email To Worker")}></Header>
+
+            <SearchProjectBar
+                searchProject={searchProject}
+                setSearchProject={setSearchProject}
+            />
+            <div className="grid grid-cols-1 gap-2">
+                {isLoading ? (
+                    <p>{transl("Loading")}</p>
+                ) : (
+                    (searchProjectFilter.length > 0 &&
+                        searchProjectFilter.map((project) => (
+                            <div
+                                key={project.id}
+                                className="bg-white p-2 rounded-md p-4 shadow relative"
+                            >
+                                <p className="text-lg">{project.title}</p>
+                                <Link
+                                    to={`/dashboard/email-to-worker/${project.id}`}
+                                    className="absolute inset-0"
+                                ></Link>
+                            </div>
+                        ))) || <p>{transl("No projects found")}</p>
+                )}
             </div>
         </div>
     );

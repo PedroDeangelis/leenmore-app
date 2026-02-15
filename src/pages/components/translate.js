@@ -1,7 +1,7 @@
 export default function transl(char) {
     if (process.env?.REACT_APP_EN_VERSION === "development") {
-        return char;
     }
+    return char;
     const key = char.toLowerCase();
     const map = {
         preview: "미리보기",

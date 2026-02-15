@@ -206,7 +206,7 @@ function SubmissionForm({
                     privacyConsentCheckbox={privacyConsentCheckbox}
                     setPrivacyConsentCheckbox={setPrivacyConsentCheckbox}
                     project={project}
-                    filename={filename}
+                    filename={`${shareholder.name}_${shareholder.date_of_birth_code}`}
                     privacyConsentFilePath={privacyConsentFilePath}
                     setPrivacyConsentFilePath={setPrivacyConsentFilePath}
                 />
