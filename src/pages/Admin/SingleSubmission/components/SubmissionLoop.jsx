@@ -175,14 +175,14 @@ function SubmissionLoop({ data, projectResults }) {
                 />
             </div>
             <div ref={lastSubmissionRef}></div>
-            <EditShareholderResultDialog
+            {/* <EditShareholderResultDialog
                 shareholder={editDialogShareholder}
                 handleCloseEditing={handleCloseEditing}
                 open={openEditDialog}
                 results={projectResults}
                 handleResultUpdate={handleResultUpdate}
                 submissionID={editDialogSubmission}
-            />
+            /> */}
         </>
     );
 }

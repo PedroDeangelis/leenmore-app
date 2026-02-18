@@ -25,41 +25,41 @@ import {
 import { toast } from "react-toastify";
 
 function ShareholderTable({ list, isEditble, projectResult }) {
-	const stickyCell = "sticky left-0 bg-white z-20";
-	const deleteShareholderMutation = useShareholderDelete();
+    const stickyCell = "sticky left-0 bg-white z-20";
+    const deleteShareholderMutation = useShareholderDelete();
     const updateShareholderMutation = useShareholderUpdate();
     const [editModalOpen, setEditModalOpen] = React.useState(false);
     const [selectedShareholder, setSelectedShareholder] = React.useState(null);
     const [workers, setWorkers] = React.useState([]);
 
-	const handleDeleteShareholder = (id, name) => {
-		if (
-			window.confirm(
-				`${transl(
-					"Do you really want to delete this shareholder?"
-				)} \n\n\n${transl("shareholder name")}: ${name} `
-			) == true
-		) {
-			deleteShareholderMutation.mutate(
-				{
-					id: id,
-				},
-				{
-					onSuccess: () => {
-						toast.success("Shareholder deleted successfully", {
-							position: "top-right",
-							autoClose: 4000,
-							hideProgressBar: false,
-							closeOnClick: true,
-							pauseOnHover: true,
-							draggable: true,
-							progress: undefined,
-						});
-					},
-				}
-			);
-		}
-	};
+    const handleDeleteShareholder = (id, name) => {
+        if (
+            window.confirm(
+                `${transl(
+                    "Do you really want to delete this shareholder?",
+                )} \n\n\n${transl("shareholder name")}: ${name} `,
+            ) == true
+        ) {
+            deleteShareholderMutation.mutate(
+                {
+                    id: id,
+                },
+                {
+                    onSuccess: () => {
+                        toast.success("Shareholder deleted successfully", {
+                            position: "top-right",
+                            autoClose: 4000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                        });
+                    },
+                },
+            );
+        }
+    };
 
     const openWorkersModal = (shareholder) => {
         setSelectedShareholder(shareholder);
@@ -121,148 +121,157 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                 onError: () => {
                     toast.error(transl("Could not update workers"));
                 },
-            }
+            },
         );
     };
 
-	return (
-		<div className="p-4 ">
-			<TableContainer
-				className="border"
-				sx={{
-					maxHeight: 440,
-					maxWidth: "100%",
-					overflowX: "auto",
-				}}
-			>
-				<Table stickyHeader aria-label="sticky table">
-					<TableHead>
-						<TableRow>
-							<TableCell
-								className={stickyCell}
-								style={{ minWidth: 96, zIndex: 22 }}
-							>
-								{transl("no")}.
-							</TableCell>
-							<TableCell
-								className={`${stickyCell} left-24`}
-								style={{
-									minWidth: 120,
-									zIndex: 22,
-									borderRight: "1px solid #e0e0e0",
-								}}
-							>
-								{transl("name")}
-							</TableCell>
-							<TableCell style={{ minWidth: 100 }}>
-								{transl("Resident Registration Number")}
-							</TableCell>
-							<TableCell style={{ minWidth: 100 }}>
-								{transl("sex")}
-							</TableCell>
-							<TableCell style={{ minWidth: 200 }}>
-								{transl("number Of Shares")}
-							</TableCell>
-							<TableCell style={{ minWidth: 200 }}>
-								{transl("total Number Of Shares")}
-							</TableCell>
-							<TableCell style={{ minWidth: 300 }}>
-								{transl("contact Info")}
-							</TableCell>
-							<TableCell style={{ minWidth: 300 }}>
-								{transl("database")}
-							</TableCell>
-							<TableCell style={{ minWidth: 300 }}>
-								{transl("contact for worker")}
-							</TableCell>
-							<TableCell style={{ minWidth: 300 }}>
-								{transl("Eletronic Voting")}
-							</TableCell>
-							<TableCell style={{ minWidth: 300 }}>
-								{transl("address")}
-							</TableCell>
-							<TableCell style={{ minWidth: 100 }}>
-								{transl("worker")}
-							</TableCell>
-							<TableCell style={{ minWidth: 100 }}>
-								{transl("Result")}
-							</TableCell>
-							<TableCell style={{ minWidth: 150 }}>
-								{transl("person Type")}
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{list
-							.sort((a, b) => a.no - b.no)
-							.map((value, key) => {
-								var chip = "";
-								if (isEditble && projectResult[value.result]) {
-									chip = JSON.parse(
-										projectResult[value.result]
-									);
-								}
+    return (
+        <div className="p-4 ">
+            <TableContainer
+                className="border"
+                sx={{
+                    maxHeight: 440,
+                    maxWidth: "100%",
+                    overflowX: "auto",
+                }}
+            >
+                <Table stickyHeader aria-label="sticky table">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell
+                                className={stickyCell}
+                                style={{ minWidth: 96, zIndex: 22 }}
+                            >
+                                {transl("no")}.
+                            </TableCell>
+                            <TableCell
+                                className={`${stickyCell} left-24`}
+                                style={{
+                                    minWidth: 120,
+                                    zIndex: 22,
+                                    borderRight: "1px solid #e0e0e0",
+                                }}
+                            >
+                                {transl("name")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 100 }}>
+                                {transl("Resident Registration Number")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 100 }}>
+                                {transl("sex")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 200 }}>
+                                {transl("number Of Shares")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 200 }}>
+                                {transl("total Number Of Shares")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 300 }}>
+                                {transl("contact Info")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 300 }}>
+                                {transl("database")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 300 }}>
+                                {transl("contact for worker")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 300 }}>
+                                {transl("Eletronic Voting")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 300 }}>
+                                {transl("address")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 100 }}>
+                                {transl("worker")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 100 }}>
+                                {transl("Result")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 150 }}>
+                                {transl("person Type")}
+                            </TableCell>
+                            <TableCell style={{ minWidth: 150 }}>
+                                구 판단
+                            </TableCell>
+                            <TableCell style={{ minWidth: 150 }}>
+                                구 멘트
+                            </TableCell>
+                            <TableCell style={{ minWidth: 150 }}>
+                                비고
+                            </TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {list
+                            .sort((a, b) => a.no - b.no)
+                            .map((value, key) => {
+                                var chip = "";
+                                if (isEditble && projectResult[value.result]) {
+                                    chip = JSON.parse(
+                                        projectResult[value.result],
+                                    );
+                                }
 
-								return (
-									<TableRow key={key}>
-										<TableCell className={stickyCell}>
-											{isEditble && !value?.result && (
-												<IconButton
-													size="small"
-													onClick={() =>
-														handleDeleteShareholder(
-															value.id,
-															value.name
-														)
-													}
-												>
-													<ClearIcon
-														sx={{ fontSize: 12 }}
-													/>
-												</IconButton>
-											)}
-											{value?.no}
-										</TableCell>
-										<TableCell
-											className={`${stickyCell} left-24`}
-											style={{
-												borderRight:
-													"1px solid #e0e0e0",
-											}}
-										>
-											<div className="flex items-center">
-												{value.name}
-											</div>
-										</TableCell>
-										<TableCell>
-											{value.registration}
-										</TableCell>
-										<TableCell>{value.sex}</TableCell>
-										<TableCell>{value.shares}</TableCell>
-										<TableCell>
-											{value.shares_total}
-										</TableCell>
-										<TableCell>
-											{value.contact_info}
-										</TableCell>
-										<TableCell>{value.database}</TableCell>
-										<TableCell>
-											{value.contact_worker}
-										</TableCell>
-										<TableCell>
-											{value.eletronic_voting}
-										</TableCell>
-										<TableCell>{value.address}</TableCell>
-										<TableCell>
-                                        {value.user.map((value) => (
-                                            <Chip
-                                                key={value}
-                                                label={value}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ marginBottom: "6px" }}
-                                            />
-                                        ))}
+                                return (
+                                    <TableRow key={key}>
+                                        <TableCell className={stickyCell}>
+                                            {isEditble && !value?.result && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() =>
+                                                        handleDeleteShareholder(
+                                                            value.id,
+                                                            value.name,
+                                                        )
+                                                    }
+                                                >
+                                                    <ClearIcon
+                                                        sx={{ fontSize: 12 }}
+                                                    />
+                                                </IconButton>
+                                            )}
+                                            {value?.no}
+                                        </TableCell>
+                                        <TableCell
+                                            className={`${stickyCell} left-24`}
+                                            style={{
+                                                borderRight:
+                                                    "1px solid #e0e0e0",
+                                            }}
+                                        >
+                                            <div className="flex items-center">
+                                                {value.name}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {value.registration}
+                                        </TableCell>
+                                        <TableCell>{value.sex}</TableCell>
+                                        <TableCell>{value.shares}</TableCell>
+                                        <TableCell>
+                                            {value.shares_total}
+                                        </TableCell>
+                                        <TableCell>
+                                            {value.contact_info}
+                                        </TableCell>
+                                        <TableCell>{value.database}</TableCell>
+                                        <TableCell>
+                                            {value.contact_worker}
+                                        </TableCell>
+                                        <TableCell>
+                                            {value.eletronic_voting}
+                                        </TableCell>
+                                        <TableCell>{value.address}</TableCell>
+                                        <TableCell>
+                                            {value.user.map((value) => (
+                                                <Chip
+                                                    key={value}
+                                                    label={value}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ marginBottom: "6px" }}
+                                                />
+                                            ))}
                                             {/* Edit Users */}
                                             <button
                                                 type="button"
@@ -271,25 +280,34 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                                                 onClick={() =>
                                                     openWorkersModal(value)
                                                 }
-                                                disabled={updateShareholderMutation.isLoading}
+                                                disabled={
+                                                    updateShareholderMutation.isLoading
+                                                }
                                             >
                                                 {transl("Edit Workers")}
                                             </button>
                                         </TableCell>
-										<TableCell>
-											<OChip color={chip.color}>
-												{chip.name}
-											</OChip>
-										</TableCell>
-										<TableCell>
-											{value.person_type}
-										</TableCell>
-									</TableRow>
-								);
-							})}
-					</TableBody>
-				</Table>
-			</TableContainer>
+                                        <TableCell>
+                                            <OChip color={chip.color}>
+                                                {chip.name}
+                                            </OChip>
+                                        </TableCell>
+                                        <TableCell>
+                                            {value.person_type}
+                                        </TableCell>
+                                        <TableCell>
+                                            {value.prev_result}
+                                        </TableCell>
+                                        <TableCell>
+                                            {value.prev_comment}
+                                        </TableCell>
+                                        <TableCell>{value.prev_note}</TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                    </TableBody>
+                </Table>
+            </TableContainer>
             <Dialog
                 open={editModalOpen}
                 onClose={closeWorkersModal}
@@ -356,8 +374,8 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                     </Button>
                 </DialogActions>
             </Dialog>
-		</div>
-	);
+        </div>
+    );
 }
 
 export default ShareholderTable;

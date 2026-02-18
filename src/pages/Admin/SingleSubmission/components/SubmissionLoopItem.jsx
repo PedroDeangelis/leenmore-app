@@ -99,15 +99,6 @@ function SubmissionLoopItem({
                         {moment(date).format("YY/MM/DD")}
                     </span>
                     {chip && <OChip color={chip.color}>{chip.name}</OChip>}
-                    <Link to={`/dashboard/submission/edit/${submissionID}`}>
-                        <IconButton>
-                            <EditIcon
-                                sx={{
-                                    fontSize: "12px",
-                                }}
-                            />
-                        </IconButton>
-                    </Link>
                 </div>
             </div>
             <div

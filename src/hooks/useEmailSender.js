@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useMutation } from "react-query";
+import supabase from "../utils/supabaseClient";
 
 const EmailSender = async ({
     project_id,
@@ -11,20 +12,16 @@ const EmailSender = async ({
     attachments,
 }) => {
     let response = false;
+    const recipients = await getWorkersEmails(workers);
 
     await axios
         .post(
-            // `${process.env.REACT_APP_STORAGE_PATH}insert-emails`,
-            `https://leenmore-storage.lndo.site/insert-emails`,
+            `${process.env.REACT_APP_STORAGE_PATH}insert-emails`,
+            // `https://leenmore-storage.lndo.site/insert-emails`,
             {
                 project_id,
                 admin_id: current_user_id,
-                recipients: [
-                    {
-                        worker_id: 123,
-                        email: "deangelissp@gmail.com",
-                    },
-                ],
+                recipients,
                 subject,
                 body: message,
                 links,
@@ -45,6 +42,35 @@ const EmailSender = async ({
         });
 
     return response;
+};
+
+const getWorkersEmails = async (workers) => {
+    if (!Array.isArray(workers) || workers.length === 0) {
+        return [];
+    }
+
+    const names = [...new Set(workers.filter(Boolean))];
+
+    if (names.length === 0) {
+        return [];
+    }
+
+    const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("id, email, first_name")
+        .in("first_name", names);
+
+    if (error) {
+        console.error("getWorkersEmails error", error);
+        return [];
+    }
+
+    return (profiles || [])
+        .filter((profile) => profile?.id && profile?.email)
+        .map((profile) => ({
+            worker_id: profile.id,
+            email: profile.email,
+        }));
 };
 
 export const useEmailSender = (

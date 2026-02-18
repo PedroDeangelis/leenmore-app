@@ -140,9 +140,9 @@ function SearchShareholdersApp() {
                                             key={shareholder.id}
                                             sx={{ marginBottom: "14px" }}
                                         >
-                                            <CardContent>
+                                            <CardContent className="relative">
                                                 {shareholder.eletronic_voting && (
-                                                    <p className="text-center mb-1 font-extrabold text-lg text-blue-700 md:absolute md:top-5 left-0 w-full">
+                                                    <p className="text-center mb-1 text-base text-blue-700 md:absolute md:top-5 left-0 w-full">
                                                         (전자투표 완료)
                                                     </p>
                                                 )}

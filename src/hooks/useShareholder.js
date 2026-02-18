@@ -90,8 +90,6 @@ const updateShareholders = async ({ formatedShareholders: shareholders }) => {
         (s, index, self) => index === self.findIndex((t) => t.id === s.id),
     );
 
-    console.log("uniqueShareholders", uniqueShareholders);
-
     const { data, error } = await supabase
         .from("shareholder")
         .upsert(uniqueShareholders);
