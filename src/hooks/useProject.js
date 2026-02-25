@@ -8,7 +8,7 @@ const getAllProjects = async () => {
     let { data: project, error } = await supabase
         .from("project")
         .select(`*, shareholder (*)`)
-        .filter("status", "in", '("publish","draft")')
+        .in("status", ["publish", "draft"])
         .order("id", { ascending: false });
 
     return project;
@@ -24,7 +24,8 @@ const getSingleProjectWithShareholders = async ({ queryKey }) => {
     let { data, error } = await supabase
         .from("project")
         .select(`*, shareholder(*)`)
-        .eq("id", project_id);
+        .eq("id", project_id)
+        .in("status", ["publish", "draft"]);
 
     return data[0];
 };
@@ -46,7 +47,8 @@ const getProject = async ({ queryKey }) => {
     let { data, error } = await supabase
         .from("project")
         .select("*")
-        .eq("id", project_id);
+        .eq("id", project_id)
+        .in("status", ["publish", "draft"]);
 
     let projectData = false;
     if (!error) {
@@ -156,7 +158,7 @@ const getProjectsOfSpecificUser = async ({ queryKey }) => {
     let { data: project, error } = await supabase
         .from("project")
         .select(`*, shareholder(*)`)
-        .eq("status", "publish")
+        .in("status", ["publish"])
         .contains("shareholder.user", [user]);
 
     if (error || !project?.length) {
@@ -190,7 +192,8 @@ const getProjectWithShareholders = async ({ queryKey }) => {
         submission(*, is_deleted)`,
         )
         .filter("submission.is_deleted", "eq", false)
-        .eq("id", project_id);
+        .eq("id", project_id)
+        .in("status", ["publish", "draft"]);
 
     let projectData = false;
     if (!error) {
@@ -221,7 +224,8 @@ const getProjectWithShareholdersByUser = async ({ queryKey }) => {
         .from("project")
         .select(`*, shareholder(*)`)
         .contains("shareholder.user", [user_name])
-        .eq("id", project_id);
+        .eq("id", project_id)
+        .in("status", ["publish", "draft"]);
 
     let projectData = false;
     if (!error) {
@@ -247,6 +251,7 @@ const getAllProjectsSimpleList = async () => {
     let { data: project, error } = await supabase
         .from("project")
         .select(`*`)
+        .in("status", ["publish", "draft"])
         .order("id", { ascending: false });
 
     return project;

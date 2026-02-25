@@ -114,11 +114,24 @@ function SubmissionLoopItem({
                 <div className="border-t border-dashed border-gray-400  pt-4 grid grid-cols-2 gap-14">
                     <div>
                         <div>
-                            <p className="text-sm  text-slate-600 mb-3">
-                                <strong className="mr-2 uppercase text-xs">
+                            <p className="text-sm  text-slate-600 mb-3 flex items-center gap-2">
+                                <strong className="uppercase text-xs">
                                     {transl("Create At")}:
                                 </strong>
                                 {moment(created_at).format("YYYY-MM-DD  HH:mm")}
+                                <div className="text-base flex items-center gap-2 justify-center ml-2">
+                                    {shareholderValue.eletronic_voting && (
+                                        <p className=" text-blue-700 ">
+                                            (전자투표 완료)
+                                        </p>
+                                    )}
+                                    {shareholderValue.api_recipient_contact &&
+                                        shareholderValue.api_recipient_completion_date && (
+                                            <p className=" text-green-700 ">
+                                                ({transl("Eproxy completed")})
+                                            </p>
+                                        )}
+                                </div>
                             </p>
                         </div>
                         <div>

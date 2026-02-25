@@ -5,15 +5,36 @@ import transl from "../../components/translate";
 export default function getPercentageRateForShareholder(
     shareholders,
     results,
-    shares_target
+    shares_target,
 ) {
     if (!shareholders?.length) return null;
     var resultList = results.map((result) => JSON.parse(result));
 
+    const eletronicVoteLabel = transl("eletronic vote");
+    const eproxyLinkLabel = transl("eproxy link");
+
     resultList.push({
-        name: transl("eletronic vote"),
+        name: eletronicVoteLabel,
         color: "b&w",
         order: 9999999999,
+    });
+
+    const greenOrders = resultList
+        .map((item, index) => ({
+            color: item?.color,
+            order: Number.isFinite(item?.order) ? item.order : index,
+        }))
+        .filter((item) => item.color === "green")
+        .map((item) => item.order);
+
+    const eproxyOrder = greenOrders.length
+        ? Math.max(...greenOrders) + 0.01
+        : 9999999998;
+
+    resultList.push({
+        name: eproxyLinkLabel,
+        color: "green",
+        order: eproxyOrder,
     });
 
     let allResults = [];
@@ -27,10 +48,27 @@ export default function getPercentageRateForShareholder(
         });
     });
 
+    const hasEproxyLink = (shareholder) =>
+        shareholder.api_recipient_contact &&
+        shareholder.api_recipient_completion_date;
+
+    const getResultColor = (resultValue) => {
+        const index = Number.parseInt(resultValue, 10);
+        if (!Number.isFinite(index)) {
+            return null;
+        }
+        return resultList[index]?.color ?? null;
+    };
+
     allResults = shareholders.map((item) => {
-        let result = item.eletronic_voting?.length
-            ? transl("eletronic vote")
-            : item.result;
+        const isGreenResult = getResultColor(item.result) === "green";
+        let result = item.result;
+
+        if (item.eletronic_voting?.length) {
+            result = eletronicVoteLabel;
+        } else if (hasEproxyLink(item) && isGreenResult) {
+            result = eproxyLinkLabel;
+        }
 
         return {
             result: result,
@@ -45,8 +83,13 @@ export default function getPercentageRateForShareholder(
             if (key == item2.result) {
                 total += parseInt(item2.shares);
             } else if (
-                item2.result == transl("eletronic vote") &&
-                item.name == transl("eletronic vote")
+                item2.result == eletronicVoteLabel &&
+                item.name == eletronicVoteLabel
+            ) {
+                total += parseInt(item2.shares);
+            } else if (
+                item2.result == eproxyLinkLabel &&
+                item.name == eproxyLinkLabel
             ) {
                 total += parseInt(item2.shares);
             }

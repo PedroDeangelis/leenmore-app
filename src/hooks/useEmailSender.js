@@ -10,6 +10,7 @@ const EmailSender = async ({
     message,
     links,
     attachments,
+    include_worker_report = false,
 }) => {
     let response = false;
     const recipients = await getWorkersEmails(workers);
@@ -27,6 +28,7 @@ const EmailSender = async ({
                 links,
                 attachments,
                 token: process.env.REACT_APP_STORAGE_AUTH_KEY,
+                include_worker_report,
             },
             {
                 headers: {

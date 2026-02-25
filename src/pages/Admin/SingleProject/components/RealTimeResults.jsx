@@ -56,10 +56,10 @@ function RealTimeResults({ project }) {
                             pauseOnHover: true,
                             draggable: true,
                             progress: undefined,
-                        }
+                        },
                     );
                 },
-            }
+            },
         );
     };
     const handleSharesIssuedChange = (event) => {
@@ -84,7 +84,7 @@ function RealTimeResults({ project }) {
         const newRate = getPercentageRateForShareholder(
             shareholderResults,
             project.results,
-            Number(project.shares_target.replace(/,/g, ""))
+            Number(project.shares_target.replace(/,/g, "")),
         );
 
         if (newRate) {
@@ -103,7 +103,7 @@ function RealTimeResults({ project }) {
                                 project.shares_target,
                                 resultsRate,
                                 project.title,
-                                project.end_date
+                                project.end_date,
                             );
                         }}
                     >
@@ -217,7 +217,7 @@ function RealTimeResults({ project }) {
                             style={{
                                 backgroundColor: rgba(
                                     `${result.colorHex}`,
-                                    0.4
+                                    0.4,
                                 ),
                             }}
                             className="grid grid-cols-6 text-sm text-gray-700  font-medium items-center"
@@ -238,7 +238,7 @@ function RealTimeResults({ project }) {
                             </p>
 
                             {resultsRate.colorTotal.hasOwnProperty(
-                                result.color
+                                result.color,
                             ) &&
                             resultsRate.colorTotal[result.color]["result"] ==
                                 result.result ? (
@@ -248,7 +248,7 @@ function RealTimeResults({ project }) {
                                         style={{
                                             backgroundColor: rgba(
                                                 `${result.colorHex}`,
-                                                0.8
+                                                0.8,
                                             ),
                                         }}
                                     >
@@ -263,7 +263,7 @@ function RealTimeResults({ project }) {
                                         style={{
                                             backgroundColor: rgba(
                                                 `${result.colorHex}`,
-                                                0.8
+                                                0.8,
                                             ),
                                         }}
                                     >
@@ -280,7 +280,7 @@ function RealTimeResults({ project }) {
                                         style={{
                                             backgroundColor: rgba(
                                                 `${result.colorHex}`,
-                                                0.8
+                                                0.8,
                                             ),
                                         }}
                                     >

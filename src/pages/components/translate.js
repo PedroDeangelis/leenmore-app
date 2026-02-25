@@ -2,6 +2,7 @@ export default function transl(char) {
     if (process.env?.REACT_APP_EN_VERSION === "development") {
         return char;
     }
+
     const key = char.toLowerCase();
     const map = {
         preview: "미리보기",
@@ -94,6 +95,7 @@ export default function transl(char) {
         goal: "목표주식수",
         "eletronic voting": "전자투표",
         "eletronic vote": "전자투표",
+        "eproxy link": "위임(전자위임_링크)",
         "publish new project": "새 프로젝트 만들기",
         "type total": "총 합(주식수)",
         "type percentage": "총 합(%)",
@@ -279,6 +281,11 @@ export default function transl(char) {
         "privacy consent file": "개인정보 동의",
         "email to worker": "활동가에게 이메일 보내기",
         vacant: "담당자 없음",
+        "recipient contact": "전자위임날짜",
+        "completion date": "전자위임연락처",
+        "eproxy completed": "전자위임 완료",
+        "create at": "생성 날짜",
+        "select all": "전체 선택",
     };
 
     return map[key] ? map[key] : char;

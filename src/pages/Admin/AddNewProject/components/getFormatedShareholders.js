@@ -48,6 +48,8 @@ export default function getFormatedShareholders(csv) {
         prev_result: getIndex("구 판단") ?? 12,
         prev_comment: getIndex("구 멘트") ?? 13,
         prev_note: getIndex("비고") ?? 14,
+        api_recipient_contact: getIndex("전자위임날짜") ?? 15,
+        api_recipient_completion_date: getIndex("전자위임연락처") ?? 16,
     };
 
     csv?.forEach((row, key) => {
@@ -97,6 +99,9 @@ export default function getFormatedShareholders(csv) {
         const prevResult = row[indexes.prev_result] ?? "";
         const prevComment = row[indexes.prev_comment] ?? "";
         const prevNote = row[indexes.prev_note] ?? "";
+        const apiRecipientContact = row[indexes.api_recipient_contact] ?? "";
+        const apiRecipientCompletionDate =
+            row[indexes.api_recipient_completion_date] ?? "";
 
         let personType = "person";
         let dob = registrationClean.substr(0, 6);
@@ -144,6 +149,8 @@ export default function getFormatedShareholders(csv) {
             prev_result: prevResult,
             prev_comment: prevComment,
             prev_note: prevNote,
+            api_recipient_contact: apiRecipientContact,
+            api_recipient_completion_date: apiRecipientCompletionDate,
         });
 
         // console.log('shareholders[0]', shareholders)

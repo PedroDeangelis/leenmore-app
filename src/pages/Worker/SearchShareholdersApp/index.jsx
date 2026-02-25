@@ -141,11 +141,23 @@ function SearchShareholdersApp() {
                                             sx={{ marginBottom: "14px" }}
                                         >
                                             <CardContent className="relative">
-                                                {shareholder.eletronic_voting && (
-                                                    <p className="text-center mb-1 text-base text-blue-700 md:absolute md:top-5 left-0 w-full">
-                                                        (전자투표 완료)
-                                                    </p>
-                                                )}
+                                                <div className="md:absolute md:top-5 left-0 w-full  mb-1 text-center  text-base flex items-center gap-2 justify-center">
+                                                    {shareholder.eletronic_voting && (
+                                                        <p className=" text-blue-700 ">
+                                                            (전자투표 완료)
+                                                        </p>
+                                                    )}
+                                                    {shareholder.api_recipient_contact &&
+                                                        shareholder.api_recipient_completion_date && (
+                                                            <p className=" text-green-700 ">
+                                                                (
+                                                                {transl(
+                                                                    "Eproxy completed",
+                                                                )}
+                                                                )
+                                                            </p>
+                                                        )}
+                                                </div>
                                                 <div className="flex items-center justify-between">
                                                     <p className="font-bold">
                                                         {shareholder.name}

@@ -20,6 +20,8 @@ export default function getDownloadCSV({ project }) {
         transl("Submission Date"),
         transl("Result"),
         transl("Privacy Consent File"),
+        transl("recipient contact"),
+        transl("completion date"),
     ];
 
     const resultTable = project?.results?.map((value) => JSON.parse(value));
@@ -92,6 +94,8 @@ export default function getDownloadCSV({ project }) {
             latestSubmissionDate,
             resultTable[customer.result]?.name,
             privacyConsentFile,
+            customer.api_recipient_contact,
+            customer.api_recipient_completion_date,
         ];
 
         headerDates?.forEach((date) => {

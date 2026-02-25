@@ -252,11 +252,11 @@ const getAllShareholdersByUser = async ({ queryKey }) => {
     const user = queryKey[1];
     if (!user) return false;
 
-    // 1) Get ONLY publish project IDs where at least one shareholder has this user
+    // 1) Get publish or draft project IDs where at least one shareholder has this user
     const { data: projects, error: pErr } = await supabase
         .from("project")
         .select(`id, shareholder!inner(id)`) // inner join ensures project must have matching shareholder
-        .eq("status", "publish")
+        .in("status", ["publish", "draft"])
         .contains("shareholder.user", [user]);
 
     if (pErr) {

@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import Header from "../components/Header";
 import transl from "../../components/translate";
-import sanitizeFilename from "../../components/sanitizeFilename";
 import {
     Button,
     Card,
@@ -12,6 +9,9 @@ import {
     CircularProgress,
     FormControl,
     FormControlLabel,
+    InputLabel,
+    MenuItem,
+    Select,
     TextField,
 } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
@@ -19,72 +19,8 @@ import { useProjectWithShareholders } from "../../../hooks/useProject";
 import { useUser, useUserisLoggendIn } from "../../../hooks/useUser";
 import { useEmailSender } from "../../../hooks/useEmailSender";
 import { useResources } from "../../../hooks/useResource";
-
-const MIME_XLSX =
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-const WORKER_SHAREHOLDER_HEADERS = [
-    "no",
-    "date_of_birth_code",
-    "sex",
-    "name",
-    "prev_note",
-    "shares_total",
-    "address",
-    "contact_info",
-    "database",
-    "prev_result",
-    "prev_comment",
-];
-
-const WORKER_SHAREHOLDER_HEADER_LABELS = [
-    "연번",
-    "고유번호",
-    "성별",
-    "주주명",
-    "비고",
-    "총소유주식수",
-    "주소",
-    "주소서치",
-    "구연락처",
-    "구 판단",
-    "구 멘트",
-];
-
-const normalizeAssignedWorkers = (value) => {
-    if (Array.isArray(value)) {
-        return value.map((item) => item?.toString().trim()).filter(Boolean);
-    }
-    if (typeof value === "string") {
-        return value
-            .split("/")
-            .map((item) => item.trim())
-            .filter(Boolean);
-    }
-    return [];
-};
-
-const sanitizeWorksheetName = (value) => {
-    if (!value) return "Worker";
-    const sanitized = value.replace(/[\\/?*:[\]]/g, "").trim();
-    return sanitized.slice(0, 31) || "Worker";
-};
-
-const getUniqueWorksheetName = (value, usedNames) => {
-    const baseName = sanitizeWorksheetName(value);
-    let candidate = baseName;
-    let index = 2;
-
-    while (usedNames.has(candidate)) {
-        const suffix = ` (${index})`;
-        const maxBaseLength = Math.max(0, 31 - suffix.length);
-        candidate = `${baseName.slice(0, maxBaseLength)}${suffix}`;
-        index += 1;
-    }
-
-    usedNames.add(candidate);
-    return candidate;
-};
+import { useExcelGenerator } from "../../../hooks/useExcelGenerator";
+import { toast } from "react-toastify";
 
 function SingleEmailToWorker() {
     const { project_id } = useParams();
@@ -92,6 +28,7 @@ function SingleEmailToWorker() {
     const { data: currentUser } = useUserisLoggendIn();
     const { data: usermeta } = useUser(currentUser?.id);
     const emailSender = useEmailSender();
+    const excelGenerator = useExcelGenerator();
     const { data: resources, isLoading: isResourcesLoading } = useResources(
         project_id,
         "project",
@@ -102,6 +39,11 @@ function SingleEmailToWorker() {
     const [message, setMessage] = useState("");
     const [selectedLinkIds, setSelectedLinkIds] = useState([]);
     const [selectedAttachmentIds, setSelectedAttachmentIds] = useState([]);
+    const [includeWorkerReport, setIncludeWorkerReport] = useState(true);
+    const [isSendingEmails, setIsSendingEmails] = useState(false);
+    const [sortColumn, setSortColumn] = useState("a");
+    const [sortOrder, setSortOrder] = useState("asc");
+    const [downloadType, setDownloadType] = useState("excel");
     // const workers
 
     useEffect(() => {
@@ -222,102 +164,91 @@ function SingleEmailToWorker() {
         (worker) => worker.name === currentWorkerName,
     );
 
-    const handleDownloadShareholderSheet = async (worker) => {
-        const workerName = (
-            hasCurrentWorker
-                ? currentWorkerName
-                : worker?.name || currentWorkerName
-        )
-            ?.toString()
-            .trim();
-
-        if (!workerName) {
-            return;
-        }
-
-        const shareholders = Array.isArray(project?.shareholder)
-            ? project.shareholder
-            : [];
-        const assignedShareholders = shareholders.filter((shareholder) =>
-            normalizeAssignedWorkers(shareholder?.user).includes(workerName),
-        );
-
-        const workbook = new ExcelJS.Workbook();
-        const usedNames = new Set();
-        const worksheet = workbook.addWorksheet(
-            getUniqueWorksheetName(workerName, usedNames),
-        );
-        worksheet.addRow(WORKER_SHAREHOLDER_HEADER_LABELS);
-
-        assignedShareholders.forEach((shareholder) => {
-            const row = WORKER_SHAREHOLDER_HEADERS.map((key) => {
-                const value = shareholder?.[key];
-                return value === null || value === undefined ? "" : value;
-            });
-            worksheet.addRow(row);
-        });
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const baseFilename = `${project?.title || "project"}_\uC8FC\uC8FC\uBA85\uBD80_${workerName}`;
-        const filename = `${sanitizeFilename(baseFilename)}.xlsx`;
-
-        saveAs(new Blob([buffer], { type: MIME_XLSX }), filename);
-    };
-
-    const handleDownloadAllShareholderSheets = async () => {
-        const shareholders = Array.isArray(project?.shareholder)
-            ? project.shareholder
-            : [];
-        const workbook = new ExcelJS.Workbook();
-        const usedNames = new Set();
-        const selectedWorkers = workers.filter((worker) =>
-            selectedWorkerIds.includes(worker.id),
-        );
-
-        selectedWorkers.forEach((worker) => {
-            const workerName = worker?.name?.toString().trim();
-            if (!workerName) return;
-
-            const assignedShareholders = shareholders.filter((shareholder) =>
-                normalizeAssignedWorkers(shareholder?.user).includes(
-                    workerName,
-                ),
-            );
-
-            const worksheet = workbook.addWorksheet(
-                getUniqueWorksheetName(workerName, usedNames),
-            );
-            worksheet.addRow(WORKER_SHAREHOLDER_HEADER_LABELS);
-
-            assignedShareholders.forEach((shareholder) => {
-                const row = WORKER_SHAREHOLDER_HEADERS.map((key) => {
-                    const value = shareholder?.[key];
-                    return value === null || value === undefined ? "" : value;
-                });
-                worksheet.addRow(row);
-            });
-        });
-
-        if (workbook.worksheets.length === 0) {
-            const worksheet = workbook.addWorksheet("Workers");
-            worksheet.addRow(WORKER_SHAREHOLDER_HEADER_LABELS);
-        }
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const baseFilename = `${project?.title || "project"}_\uC8FC\uC8FC\uBA85\uBD80_\uC804\uCCB4`;
-        const filename = `${sanitizeFilename(baseFilename)}.xlsx`;
-
-        saveAs(new Blob([buffer], { type: MIME_XLSX }), filename);
-    };
-
     const canSend =
         selectedWorkerIds.length > 0 &&
         subject.trim().length > 0 &&
         message.trim().length > 0 &&
         !!currentUser?.id;
 
-    const handleSendEmail = () => {
-        if (!canSend || emailSender.isLoading) {
+    const getSortValue = (shareholder, column) => {
+        switch (column) {
+            case "a":
+                return shareholder?.no ?? "";
+            case "b":
+                return shareholder?.date_of_birth_code ?? "";
+            case "c":
+                return shareholder?.sex ?? "";
+            case "d":
+                return shareholder?.name ?? "";
+            case "e":
+                return shareholder?.prev_note ?? "";
+            case "f":
+                return shareholder?.shares_total ?? "";
+            case "g":
+                return shareholder?.address ?? "";
+            case "h":
+                return shareholder?.contact_info ?? "";
+            case "i":
+                return shareholder?.database ?? "";
+            case "j":
+                return shareholder?.prev_result ?? "";
+            case "k":
+                return shareholder?.prev_comment ?? "";
+            default:
+                return "";
+        }
+    };
+
+    const parseSortableNumber = (value) => {
+        if (value === null || value === undefined) {
+            return NaN;
+        }
+        const cleaned = String(value).replace(/[^0-9.-]/g, "");
+        const parsed = Number(cleaned);
+        return Number.isFinite(parsed) ? parsed : NaN;
+    };
+
+    const sortWorkerShareholders = (items) => {
+        if (!Array.isArray(items)) {
+            return [];
+        }
+        const column = sortColumn;
+        if (!column) {
+            return items;
+        }
+
+        const orderMultiplier = sortOrder === "desc" ? -1 : 1;
+        return [...items].sort((a, b) => {
+            const rawA = getSortValue(a, column);
+            const rawB = getSortValue(b, column);
+
+            if (column === "a" || column === "f") {
+                const numA = parseSortableNumber(rawA);
+                const numB = parseSortableNumber(rawB);
+                if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+                    if (numA === numB) return 0;
+                    return numA > numB ? orderMultiplier : -orderMultiplier;
+                }
+            }
+
+            const strA = (rawA ?? "").toString();
+            const strB = (rawB ?? "").toString();
+            return (
+                strA.localeCompare(strB, undefined, {
+                    numeric: true,
+                    sensitivity: "base",
+                }) * orderMultiplier
+            );
+        });
+    };
+
+    const handleSendEmail = async () => {
+        if (
+            !canSend ||
+            emailSender.isLoading ||
+            excelGenerator.isLoading ||
+            isSendingEmails
+        ) {
             return;
         }
 
@@ -339,23 +270,284 @@ function SingleEmailToWorker() {
                     "",
             }));
 
-        emailSender.mutate(
-            {
+        const trimmedSubject = subject.trim();
+        const trimmedMessage = message.trim();
+        const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
+
+        const sendEmailToWorkers = async (
+            workers,
+            links,
+            includeWorkerReportValue,
+        ) => {
+            await emailSender.mutateAsync({
                 project_id,
                 current_user_id: currentUser?.id,
-                workers: selectedWorkerIds,
-                subject: subject.trim(),
-                message: message.trim(),
-                links: linksPayload,
+                workers,
+                subject: trimmedSubject,
+                message: trimmedMessage,
+                links,
                 attachments: attachmentsPayload,
+                include_worker_report: includeWorkerReportValue,
+            });
+        };
+
+        setIsSendingEmails(true);
+        let didSend = false;
+        try {
+            if (!includeWorkerReport) {
+                await sendEmailToWorkers(
+                    selectedWorkerIds,
+                    linksPayload,
+                    false,
+                );
+                setSubject("");
+                setMessage("");
+                didSend = true;
+                return;
+            }
+
+            for (const workerId of selectedWorkerIds) {
+                const workerName = workerId;
+                const workerShareholders = getWorkerShareholders(workerName);
+                let reportUrl = null;
+
+                if (workerShareholders.length) {
+                    try {
+                        const reportResponse = await excelGenerator.mutateAsync(
+                            {
+                                project_id,
+                                filename: `${project?.title || "project"}_주주명부_${workerName}`,
+                                data: [
+                                    {
+                                        sheet_name: workerName,
+                                        rows: workerShareholders.map(
+                                            buildWorkerReportPayload,
+                                        ),
+                                    },
+                                ],
+                            },
+                        );
+                        const xlsxPath = reportResponse?.xlsx_path;
+                        if (xlsxPath) {
+                            reportUrl = `${storagePath}${xlsxPath}`;
+                        }
+                    } catch (error) {
+                        reportUrl = null;
+                    }
+                }
+
+                const linksWithReport = reportUrl
+                    ? [
+                          ...linksPayload,
+                          {
+                              title: "Worker report",
+                              url: reportUrl,
+                          },
+                      ]
+                    : linksPayload;
+
+                await sendEmailToWorkers(
+                    [workerId],
+                    linksWithReport,
+                    reportUrl || false,
+                );
+            }
+
+            setSubject("");
+            setMessage("");
+            didSend = true;
+        } finally {
+            setIsSendingEmails(false);
+            if (didSend) {
+                toast.success("Email sent successfully");
+            }
+        }
+    };
+
+    const getWorkerShareholders = (workerName) => {
+        if (!workerName || !Array.isArray(project?.shareholder)) {
+            return [];
+        }
+
+        const filtered = project.shareholder.filter((shareholder) => {
+            const assignedWorkers = shareholder?.user;
+            if (Array.isArray(assignedWorkers)) {
+                return assignedWorkers.includes(workerName);
+            }
+            if (typeof assignedWorkers === "string") {
+                return assignedWorkers === workerName;
+            }
+            return false;
+        });
+
+        return sortWorkerShareholders(filtered);
+    };
+
+    const buildWorkerReportPayload = (shareholder) => ({
+        a: shareholder?.no ?? "",
+        b: shareholder?.date_of_birth_code ?? "",
+        c: shareholder?.sex ?? "",
+        d: shareholder?.name ?? "",
+        e: shareholder?.prev_note ?? "",
+        f: shareholder?.shares_total ?? "",
+        g: shareholder?.address ?? "",
+        h: shareholder?.contact_info ?? "",
+        i: shareholder?.database ?? "",
+        j: shareholder?.prev_result ?? "",
+        k: shareholder?.prev_comment ?? "",
+    });
+
+    const getDownloadFilename = (payloadFilename, xlsxPath, isPdf) => {
+        if (isPdf) {
+            return payloadFilename.endsWith(".pdf")
+                ? payloadFilename
+                : `${payloadFilename}.pdf`;
+        }
+
+        if (payloadFilename) {
+            return payloadFilename.endsWith(".xlsx")
+                ? payloadFilename
+                : `${payloadFilename}.xlsx`;
+        }
+
+        const fallbackName = xlsxPath?.split("/").filter(Boolean).pop();
+        return fallbackName || "worker-report.xlsx";
+    };
+
+    const downloadFromUrl = (url, filename) => {
+        if (!url) {
+            return;
+        }
+
+        fetch(url)
+            .then((response) => response.blob())
+            .then((blob) => {
+                if (window.navigator.msSaveOrOpenBlob) {
+                    window.navigator.msSaveBlob(blob, filename);
+                    return;
+                }
+                const link = document.createElement("a");
+                const objectUrl = window.URL.createObjectURL(blob);
+                link.href = objectUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(objectUrl);
+                    document.body.removeChild(link);
+                }, 0);
+            })
+            .catch(() => {
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                }, 0);
+            });
+    };
+
+    const handleDownloadWorkerReport = (workerName) => {
+        if (!workerName || excelGenerator.isLoading) {
+            return;
+        }
+
+        const workerShareholders = getWorkerShareholders(workerName);
+        if (!workerShareholders.length) {
+            return;
+        }
+
+        excelGenerator.mutate(
+            {
+                project_id,
+                filename: `${project?.title || "project"}_주주명부_${workerName}`,
+                data: {
+                    sheet_name: workerName,
+                    rows: workerShareholders.map(buildWorkerReportPayload),
+                },
             },
             {
-                onSuccess: () => {
-                    setSubject("");
-                    setMessage("");
+                onSuccess: (resp) => {
+                    let filePath = resp?.xlsx_path;
+                    let isPdf = false;
+
+                    if (!filePath) {
+                        return;
+                    }
+
+                    if (downloadType == "pdf" && resp.pdf_path) {
+                        filePath = resp.pdf_path;
+                        isPdf = true;
+                    }
+
+                    const storagePath =
+                        process.env.REACT_APP_STORAGE_PATH || "";
+                    const downloadUrl = `${storagePath}${filePath}`;
+                    const filename = getDownloadFilename(
+                        resp?.filename,
+                        filePath,
+                        isPdf,
+                    );
+                    downloadFromUrl(downloadUrl, filename);
                 },
             },
         );
+    };
+
+    const handleMultiWorkerToggle = async () => {
+        if (excelGenerator.isLoading) {
+            return;
+        }
+
+        const workerIds = selectedWorkerIds.length
+            ? selectedWorkerIds
+            : workers.map((worker) => worker.id);
+
+        if (!workerIds.length) {
+            return;
+        }
+
+        const users = workerIds
+            .map((workerId) => {
+                const workerName = workerId;
+                const workerShareholders = getWorkerShareholders(workerName);
+                if (!workerShareholders.length) {
+                    return null;
+                }
+
+                return {
+                    sheet_name: workerName,
+                    rows: workerShareholders.map(buildWorkerReportPayload),
+                };
+            })
+            .filter(Boolean);
+
+        if (!users.length) {
+            return;
+        }
+
+        try {
+            const resp = await excelGenerator.mutateAsync({
+                project_id,
+                filename: `${project?.title || "project"}_????_multi-worker`,
+                data: users,
+                multiple: true,
+            });
+
+            const xlsxPath = resp?.xlsx_path;
+            if (!xlsxPath) {
+                return;
+            }
+
+            const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
+            const downloadUrl = `${storagePath}${xlsxPath}`;
+            const filename = getDownloadFilename(resp?.filename, xlsxPath);
+            downloadFromUrl(downloadUrl, filename);
+        } catch (error) {
+            return;
+        }
     };
 
     if (isLoading) {
@@ -373,6 +565,75 @@ function SingleEmailToWorker() {
             </Header>
             <div className="grid grid-cols-2 gap-10 items-start mb-10">
                 <div>
+                    <div className="grid grid-cols-3 gap-5 mb-5">
+                        <FormControl sx={{ width: "100%" }}>
+                            <InputLabel id="demo-simple-select-label">
+                                {transl("Sort Column")}
+                            </InputLabel>
+                            <Select
+                                labelId="demo-simple-select-label"
+                                id="demo-simple-select"
+                                required={true}
+                                label={transl("Sort Column")}
+                                value={sortColumn}
+                                onChange={(event) =>
+                                    setSortColumn(event.target.value)
+                                }
+                            >
+                                <MenuItem value="a">연번</MenuItem>
+                                <MenuItem value="b">고유번호</MenuItem>
+                                <MenuItem value="c">성별</MenuItem>
+                                <MenuItem value="d">주주명</MenuItem>
+                                <MenuItem value="e">비고</MenuItem>
+                                <MenuItem value="f">총소유주식수</MenuItem>
+                                <MenuItem value="g">주소</MenuItem>
+                                <MenuItem value="h">주소서치</MenuItem>
+                                <MenuItem value="i">구연락처</MenuItem>
+                                <MenuItem value="j">구 판단</MenuItem>
+                                <MenuItem value="k">구 멘트</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl sx={{ width: "100%" }}>
+                            <InputLabel id="demo-simple-select-label">
+                                {transl("Sort Order")}
+                            </InputLabel>
+                            <Select
+                                labelId="demo-simple-select-label"
+                                id="demo-simple-select"
+                                required={true}
+                                label={transl("Sort Order")}
+                                value={sortOrder}
+                                onChange={(event) =>
+                                    setSortOrder(event.target.value)
+                                }
+                            >
+                                <MenuItem value="asc">
+                                    {transl("Ascending")}
+                                </MenuItem>
+                                <MenuItem value="desc">
+                                    {transl("Descending")}
+                                </MenuItem>
+                            </Select>
+                        </FormControl>
+                        {/* Download EXCEL / PDF */}
+                        <FormControl sx={{ width: "100%" }}>
+                            <InputLabel id="download-type">
+                                {transl("Download Type")}
+                            </InputLabel>
+                            <Select
+                                labelId="download-type"
+                                id="download-type-select"
+                                label={transl("Download Type")}
+                                value={downloadType}
+                                onChange={(event) =>
+                                    setDownloadType(event.target.value)
+                                }
+                            >
+                                <MenuItem value="excel">Excel</MenuItem>
+                                <MenuItem value="pdf">PDF</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </div>
                     <div className="grid grid-cols-2 gap-5 mb-2 items-center">
                         <div className="bg-white  rounded shadow block w-full ">
                             <FormControlLabel
@@ -393,7 +654,8 @@ function SingleEmailToWorker() {
                                 size="small"
                                 sx={{ whiteSpace: "nowrap" }}
                                 className="flex-shrink-0 "
-                                onClick={handleDownloadAllShareholderSheets}
+                                onClick={handleMultiWorkerToggle}
+                                disabled={excelGenerator.isLoading}
                             >
                                 명부양식 전체 다운로드
                             </Button>
@@ -424,8 +686,9 @@ function SingleEmailToWorker() {
                                     sx={{ whiteSpace: "nowrap" }}
                                     className="flex-shrink-0 "
                                     onClick={() =>
-                                        handleDownloadShareholderSheet(worker)
+                                        handleDownloadWorkerReport(worker.id)
                                     }
+                                    disabled={excelGenerator.isLoading}
                                 >
                                     명부양식 내려받기
                                 </Button>
@@ -467,7 +730,12 @@ function SingleEmailToWorker() {
                                 <Button
                                     variant="contained"
                                     sx={{ mt: "20px" }}
-                                    disabled={!canSend || emailSender.isLoading}
+                                    disabled={
+                                        !canSend ||
+                                        emailSender.isLoading ||
+                                        excelGenerator.isLoading ||
+                                        isSendingEmails
+                                    }
                                     onClick={handleSendEmail}
                                 >
                                     {transl("Send Email")}
@@ -541,6 +809,25 @@ function SingleEmailToWorker() {
                                 </p>
                             )}
                         </div>
+                    </div>
+                    <div className="mt-6">
+                        <p className="font-semibold mb-2">명부양식</p>
+
+                        {/* Include 명부양식 in email */}
+                        <FormControlLabel
+                            className="block w-full bg-white rounded shadow"
+                            control={
+                                <Checkbox
+                                    checked={includeWorkerReport}
+                                    onChange={(event) =>
+                                        setIncludeWorkerReport(
+                                            event.target.checked,
+                                        )
+                                    }
+                                />
+                            }
+                            label="이메일에 명부양식 포함 (현재는 항상 포함)"
+                        />
                     </div>
                 </div>
             </div>

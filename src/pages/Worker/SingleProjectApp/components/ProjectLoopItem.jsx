@@ -22,6 +22,8 @@ function ProjectLoopItem({
     address,
     contact_worker,
     eletronic_voting,
+    api_recipient_contact,
+    api_recipient_completion_date,
 }) {
     const [resultJson, setResultJson] = useState(false);
     const navigate = useNavigate();
@@ -41,11 +43,17 @@ function ProjectLoopItem({
             <Card sx={{ marginBottom: "14px" }}>
                 <CardContent sx={{ position: "relative" }}>
                     {/* if has eletronic_voting  */}
-                    {eletronic_voting && (
-                        <p className="text-center mb-1 font-extrabold text-lg text-blue-700 md:absolute md:top-5 left-0 w-full">
-                            (전자투표 완료)
-                        </p>
-                    )}
+                    <div className="md:absolute md:top-5 left-0 w-full  mb-1 text-center  text-base flex items-center gap-2 justify-center">
+                        {eletronic_voting && (
+                            <p className=" text-blue-700 ">(전자투표 완료)</p>
+                        )}
+                        {api_recipient_contact &&
+                            api_recipient_completion_date && (
+                                <p className=" text-green-700 ">
+                                    ({transl("Eproxy completed")})
+                                </p>
+                            )}
+                    </div>
                     <div className="flex items-center justify-between">
                         <p className="font-bold">
                             {name}
