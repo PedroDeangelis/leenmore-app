@@ -286,6 +286,7 @@ export default function transl(char) {
         "eproxy completed": "전자위임 완료",
         "create at": "생성 날짜",
         "select all": "전체 선택",
+        "select a shareholder": "주주 선택",
     };
 
     return map[key] ? map[key] : char;
