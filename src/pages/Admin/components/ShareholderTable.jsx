@@ -199,6 +199,12 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                             <TableCell style={{ minWidth: 150 }}>
                                 비고
                             </TableCell>
+                            <TableCell style={{ minWidth: 150 }}>
+                                전자위임날짜
+                            </TableCell>
+                            <TableCell style={{ minWidth: 150 }}>
+                                전자위임연락처
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -302,6 +308,14 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                                             {value.prev_comment}
                                         </TableCell>
                                         <TableCell>{value.prev_note}</TableCell>
+                                        <TableCell>
+                                            {value.api_recipient_contact}
+                                        </TableCell>
+                                        <TableCell>
+                                            {
+                                                value.api_recipient_completion_date
+                                            }
+                                        </TableCell>
                                     </TableRow>
                                 );
                             })}

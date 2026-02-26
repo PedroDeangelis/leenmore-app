@@ -95,7 +95,7 @@ export default function transl(char) {
         goal: "목표주식수",
         "eletronic voting": "전자투표",
         "eletronic vote": "전자투표",
-        "eproxy link": "위임(전자위임_링크)",
+        "eproxy link": "위임(전자위임)",
         "publish new project": "새 프로젝트 만들기",
         "type total": "총 합(주식수)",
         "type percentage": "총 합(%)",

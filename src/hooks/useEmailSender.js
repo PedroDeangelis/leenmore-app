@@ -10,10 +10,13 @@ const EmailSender = async ({
     message,
     links,
     attachments,
-    include_worker_report = false,
+    include_worker_report_xlsl = false,
+    include_worker_report_pdf = false,
 }) => {
     let response = false;
     const recipients = await getWorkersEmails(workers);
+
+    // console.log("first", include_worker_report_xlsl, include_worker_report_pdf);
 
     await axios
         .post(
@@ -28,7 +31,8 @@ const EmailSender = async ({
                 links,
                 attachments,
                 token: process.env.REACT_APP_STORAGE_AUTH_KEY,
-                include_worker_report,
+                include_worker_report: include_worker_report_xlsl,
+                include_worker_report_pdf: include_worker_report_pdf,
             },
             {
                 headers: {
@@ -60,6 +64,7 @@ const getWorkersEmails = async (workers) => {
     const { data: profiles, error } = await supabase
         .from("profiles")
         .select("id, email, first_name")
+        .eq("status", "active")
         .in("first_name", names);
 
     if (error) {
@@ -72,6 +77,7 @@ const getWorkersEmails = async (workers) => {
         .map((profile) => ({
             worker_id: profile.id,
             email: profile.email,
+            // email: "deangelissp@gmail.com",
         }));
 };
 
@@ -83,6 +89,8 @@ export const useEmailSender = (
     message,
     links,
     attachments,
+    include_worker_report_xlsl = false,
+    include_worker_report_pdf = false,
 ) => {
     return useMutation(
         async (
@@ -93,6 +101,8 @@ export const useEmailSender = (
             message,
             links,
             attachments,
+            include_worker_report_xlsl,
+            include_worker_report_pdf,
         ) => {
             return await EmailSender(
                 project_id,
@@ -102,6 +112,8 @@ export const useEmailSender = (
                 message,
                 links,
                 attachments,
+                include_worker_report_xlsl,
+                include_worker_report_pdf,
             );
         },
         {

@@ -39,7 +39,9 @@ function SingleEmailToWorker() {
     const [message, setMessage] = useState("");
     const [selectedLinkIds, setSelectedLinkIds] = useState([]);
     const [selectedAttachmentIds, setSelectedAttachmentIds] = useState([]);
-    const [includeWorkerReport, setIncludeWorkerReport] = useState(true);
+    const [includeWorkerReportXLSL, setIncludeWorkerReportXLSL] =
+        useState(true);
+    const [includeWorkerReportPDF, setIncludeWorkerReportPDF] = useState(true);
     const [isSendingEmails, setIsSendingEmails] = useState(false);
     const [sortColumn, setSortColumn] = useState("a");
     const [sortOrder, setSortOrder] = useState("asc");
@@ -273,11 +275,14 @@ function SingleEmailToWorker() {
         const trimmedSubject = subject.trim();
         const trimmedMessage = message.trim();
         const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
+        const shouldIncludeWorkerReport =
+            includeWorkerReportXLSL || includeWorkerReportPDF;
 
         const sendEmailToWorkers = async (
             workers,
             links,
-            includeWorkerReportValue,
+            includeWorkerReportXLSL,
+            includeWorkerReportPDF,
         ) => {
             await emailSender.mutateAsync({
                 project_id,
@@ -287,17 +292,19 @@ function SingleEmailToWorker() {
                 message: trimmedMessage,
                 links,
                 attachments: attachmentsPayload,
-                include_worker_report: includeWorkerReportValue,
+                include_worker_report_xlsl: includeWorkerReportXLSL,
+                include_worker_report_pdf: includeWorkerReportPDF,
             });
         };
 
         setIsSendingEmails(true);
         let didSend = false;
         try {
-            if (!includeWorkerReport) {
+            if (!shouldIncludeWorkerReport) {
                 await sendEmailToWorkers(
                     selectedWorkerIds,
                     linksPayload,
+                    false,
                     false,
                 );
                 setSubject("");
@@ -309,7 +316,8 @@ function SingleEmailToWorker() {
             for (const workerId of selectedWorkerIds) {
                 const workerName = workerId;
                 const workerShareholders = getWorkerShareholders(workerName);
-                let reportUrl = null;
+                let reportUrlXlsx = null;
+                let reportUrlPdf = null;
 
                 if (workerShareholders.length) {
                     try {
@@ -317,39 +325,33 @@ function SingleEmailToWorker() {
                             {
                                 project_id,
                                 filename: `${project?.title || "project"}_주주명부_${workerName}`,
-                                data: [
-                                    {
-                                        sheet_name: workerName,
-                                        rows: workerShareholders.map(
-                                            buildWorkerReportPayload,
-                                        ),
-                                    },
-                                ],
+                                data: {
+                                    sheet_name: workerName,
+                                    rows: workerShareholders.map(
+                                        buildWorkerReportPayload,
+                                    ),
+                                },
                             },
                         );
                         const xlsxPath = reportResponse?.xlsx_path;
+                        const pdfPath = reportResponse?.pdf_path;
                         if (xlsxPath) {
-                            reportUrl = `${storagePath}${xlsxPath}`;
+                            reportUrlXlsx = `${storagePath}${xlsxPath}`;
+                        }
+                        if (pdfPath) {
+                            reportUrlPdf = `${storagePath}${pdfPath}`;
                         }
                     } catch (error) {
-                        reportUrl = null;
+                        reportUrlXlsx = null;
+                        reportUrlPdf = null;
                     }
                 }
 
-                const linksWithReport = reportUrl
-                    ? [
-                          ...linksPayload,
-                          {
-                              title: "Worker report",
-                              url: reportUrl,
-                          },
-                      ]
-                    : linksPayload;
-
                 await sendEmailToWorkers(
                     [workerId],
-                    linksWithReport,
-                    reportUrl || false,
+                    linksPayload,
+                    includeWorkerReportXLSL ? reportUrlXlsx : false,
+                    includeWorkerReportPDF ? reportUrlPdf : false,
                 );
             }
 
@@ -812,21 +814,33 @@ function SingleEmailToWorker() {
                     </div>
                     <div className="mt-6">
                         <p className="font-semibold mb-2">명부양식</p>
-
-                        {/* Include 명부양식 in email */}
                         <FormControlLabel
-                            className="block w-full bg-white rounded shadow"
+                            className="block w-full bg-white rounded shadow mb-1.5"
                             control={
                                 <Checkbox
-                                    checked={includeWorkerReport}
+                                    checked={includeWorkerReportXLSL}
                                     onChange={(event) =>
-                                        setIncludeWorkerReport(
+                                        setIncludeWorkerReportXLSL(
                                             event.target.checked,
                                         )
                                     }
                                 />
                             }
-                            label="이메일에 명부양식 포함 (현재는 항상 포함)"
+                            label="이메일에 명부양식 포함 (Excel 형식)"
+                        />
+                        <FormControlLabel
+                            className="block w-full bg-white rounded shadow"
+                            control={
+                                <Checkbox
+                                    checked={includeWorkerReportPDF}
+                                    onChange={(event) =>
+                                        setIncludeWorkerReportPDF(
+                                            event.target.checked,
+                                        )
+                                    }
+                                />
+                            }
+                            label="이메일에 명부양식 포함 (PDF 형식)"
                         />
                     </div>
                 </div>
