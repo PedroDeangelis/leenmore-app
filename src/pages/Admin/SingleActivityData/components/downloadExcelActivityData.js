@@ -1,7 +1,10 @@
 import sanitizeFilename from "../../../components/sanitizeFilename";
 import transl from "../../../components/translate";
 import getDaysWorked from "./getDaysWorked";
-import { getLastSubmissions } from "./getSubmissionActivityData";
+import {
+    getLastSubmissions,
+    parseSharesValue,
+} from "./getSubmissionActivityData";
 
 const ExcelJS = require("exceljs");
 
@@ -334,10 +337,7 @@ function getDataOfWorkerDay(dayWorkedData, results) {
     };
 
     lastSubmissionPerShareholder.forEach((submission) => {
-        var shares = submission.shareholder.shares;
-        shares = shares.replace(",", "");
-        shares = shares.replace(".", "");
-        shares = parseInt(shares);
+        const shares = parseSharesValue(submission.shareholder.shares);
 
         data.totalReports += 1;
         data.totalSharesContacted += shares;
@@ -455,10 +455,7 @@ function getTotalOfShares(submissions) {
         if (!shareholders.includes(submission.shareholder.id)) {
             shareholders.push(submission.shareholder.id);
 
-            var shares = submission.shareholder.shares;
-            shares = shares.replace(",", "");
-            shares = shares.replace(".", "");
-            shares = parseInt(shares);
+            const shares = parseSharesValue(submission.shareholder.shares);
 
             total += shares;
         }

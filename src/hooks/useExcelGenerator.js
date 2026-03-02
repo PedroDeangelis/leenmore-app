@@ -18,9 +18,9 @@ const generateWorkerReport = async ({
 
     await axios
         .post(
-            `${process.env.REACT_APP_STORAGE_PATH}${$path}`,
+            // `${process.env.REACT_APP_STORAGE_PATH}${$path}`,
 
-            // `https://leenmore-storage.lndo.site/${$path}`,
+            `https://leenmore-storage.lndo.site/${$path}`,
             {
                 project_id,
                 data,

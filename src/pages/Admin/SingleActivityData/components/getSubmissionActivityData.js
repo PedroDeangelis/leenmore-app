@@ -12,10 +12,7 @@ const getSubmissionActivityData = (submissions, results) => {
 
     lastSubmissionPerShareholder.forEach((submission) => {
         const worker = submission.user_name;
-        var shares = submission.shareholder.shares;
-        shares = shares.replace(",", "");
-        shares = shares.replace(".", "");
-        shares = parseInt(shares);
+        const shares = parseSharesValue(submission.shareholder.shares);
 
         if (!workers[worker]) {
             workers[worker] = {
@@ -49,6 +46,9 @@ const getSubmissionActivityData = (submissions, results) => {
 
 export default getSubmissionActivityData;
 
+const parseSharesValue = (value) =>
+    Number.parseInt(String(value ?? "").replace(/[^\d]/g, ""), 10) || 0;
+
 const getLastSubmissions = (submissions) => {
     const lastSubmissionsMap = {};
 
@@ -65,7 +65,7 @@ const getLastSubmissions = (submissions) => {
     return Object.values(lastSubmissionsMap);
 };
 
-export { getLastSubmissions };
+export { getLastSubmissions, parseSharesValue };
 
 function findRepeatedShareholders(submissions) {
     const shareholderCount = {};

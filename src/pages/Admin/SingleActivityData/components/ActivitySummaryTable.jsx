@@ -1,7 +1,10 @@
 import { Card, CardContent } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import transl from "../../../components/translate";
-import { getLastSubmissions } from "./getSubmissionActivityData";
+import {
+    getLastSubmissions,
+    parseSharesValue,
+} from "./getSubmissionActivityData";
 import formatNumber from "../../../components/formatNumber";
 
 function ActivitySummaryTable({ submissions, results }) {
@@ -27,10 +30,7 @@ function ActivitySummaryTable({ submissions, results }) {
 
         lastSubmissionPerShareholder.forEach((submission) => {
             const worker = submission.user_name;
-            var shares = submission.shareholder.shares;
-            shares = shares.replace(",", "");
-            shares = shares.replace(".", "");
-            shares = parseInt(shares);
+            const shares = parseSharesValue(submission.shareholder.shares);
 
             if (!workers[worker]) {
                 workers[worker] = {

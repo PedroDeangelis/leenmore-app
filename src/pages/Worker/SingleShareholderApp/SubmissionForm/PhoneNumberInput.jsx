@@ -10,7 +10,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import transl from "../../../components/translate";
 
 const MAX_NUMBERS = 3;
-const DEFAULT_PART1 = "010";
 const PART_RULES = {
     part1: { min: 2, max: 4 },
     part2: { min: 3, max: 4 },
@@ -29,7 +28,7 @@ const formatNumber = (number) =>
 
 function PhoneNumberInput({ required = false, onChange, showError }) {
     const [numbers, setNumbers] = useState([
-        { part1: DEFAULT_PART1, part2: "", part3: "" },
+        { part1: "", part2: "", part3: "" },
     ]);
     const [touched, setTouched] = useState(false);
     const inputRefs = useRef([]);
@@ -81,9 +80,14 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
             return copy;
         });
 
-        const shouldMove =
+        let shouldMove =
             limited.length >= PART_RULES[field].max &&
             !(field === "part3" && index === numbers.length - 1);
+
+        // if part 1 and user typed 010 automatically move to part 2
+        if (field === "part1" && limited === "010") {
+            shouldMove = true;
+        }
 
         if (shouldMove) {
             moveFocus(index, field);
@@ -105,10 +109,7 @@ function PhoneNumberInput({ required = false, onChange, showError }) {
 
     const handleAdd = () => {
         if (numbers.length >= MAX_NUMBERS) return;
-        setNumbers([
-            ...numbers,
-            { part1: DEFAULT_PART1, part2: "", part3: "" },
-        ]);
+        setNumbers([...numbers, { part1: "", part2: "", part3: "" }]);
     };
 
     const handleRemove = (index) => {
