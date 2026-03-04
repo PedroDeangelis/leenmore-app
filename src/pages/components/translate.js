@@ -3,6 +3,11 @@ export default function transl(char) {
         return char;
     }
 
+    // check if char is empty or null
+    if (!char) {
+        return char;
+    }
+
     const key = char.toLowerCase();
     const map = {
         preview: "미리보기",
@@ -287,6 +292,10 @@ export default function transl(char) {
         "create at": "생성 날짜",
         "select all": "전체 선택",
         "select a shareholder": "주주 선택",
+        "edit user name": "사용자 이름 수정",
+        "phone number": "전화번호",
+        "add new user": "새 사용자 추가",
+        "edit phone number": "전화번호 수정",
     };
 
     return map[key] ? map[key] : char;

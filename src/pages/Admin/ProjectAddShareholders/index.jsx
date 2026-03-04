@@ -16,7 +16,9 @@ import { downloadShareholderTemplate } from "../components/shareholderSheet";
 
 function ProjectAddShareholders() {
 	const { id } = useParams();
-	const { data, isLoading } = useShareholdersFromProject(id);
+	const { data, isLoading } = useShareholdersFromProject(id, {
+		columns: "project_id, registration, no, shares",
+	});
 	const [shareholderList, setShareholderList] = useState(false);
 	const [addingShareholderLoading, setaddingShareholderLoading] =
 		useState(false);
@@ -46,6 +48,24 @@ function ProjectAddShareholders() {
 							progress: undefined,
 						}
 					);
+				},
+				onError: (error) => {
+					toast.error(
+						error?.message ||
+							"Something went wrong while adding shareholders.",
+						{
+							position: "top-right",
+							autoClose: 4000,
+							hideProgressBar: false,
+							closeOnClick: true,
+							pauseOnHover: true,
+							draggable: true,
+							progress: undefined,
+						}
+					);
+				},
+				onSettled: () => {
+					setaddingShareholderLoading(false);
 				},
 			}
 		);

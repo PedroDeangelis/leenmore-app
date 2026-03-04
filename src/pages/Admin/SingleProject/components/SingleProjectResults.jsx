@@ -55,7 +55,7 @@ function SingleProjectResults({ results, project }) {
                         progress: undefined,
                     });
                 },
-            }
+            },
         );
     };
     return (

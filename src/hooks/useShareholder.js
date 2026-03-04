@@ -1,66 +1,155 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import supabase from "../utils/supabaseClient";
 
-const getShareholdersFromProject = async ({ queryKey }) => {
-    const project_id = queryKey[1];
+const SHAREHOLDER_FETCH_BATCH_SIZE = 1000;
+const SHAREHOLDER_INSERT_BATCH_SIZE = 1000;
 
-    let { data, error } = await supabase
-        .from("shareholder")
-        .select("*")
-        .eq("project_id", project_id)
-        .order("id", { ascending: false });
+const buildShareholderInsertKey = (shareholder = {}) =>
+    [
+        shareholder.project_id ?? "",
+        shareholder.registration ?? "",
+        shareholder.no ?? "",
+        shareholder.shares ?? "",
+    ]
+        .map((value) => String(value))
+        .join("::");
 
-    return data;
+const DEFAULT_SHAREHOLDER_PROJECT_COLUMNS = [
+    "id",
+    "project_id",
+    "registration",
+    "no",
+    "shares",
+    "name",
+    "date_of_birth_code",
+    "sex",
+    "shares_total",
+    "address",
+    "result",
+].join(", ");
+
+export const fetchShareholdersFromProject = async ({
+    project_id,
+    columns = DEFAULT_SHAREHOLDER_PROJECT_COLUMNS,
+}) => {
+    const shareholders = [];
+
+    for (
+        let from = 0;
+        ;
+        from += SHAREHOLDER_FETCH_BATCH_SIZE
+    ) {
+        const to = from + SHAREHOLDER_FETCH_BATCH_SIZE - 1;
+        const { data, error } = await supabase
+            .from("shareholder")
+            .select(columns)
+            .eq("project_id", project_id)
+            .order("id", { ascending: false })
+            .range(from, to);
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data?.length) {
+            break;
+        }
+
+        shareholders.push(...data);
+
+        if (data.length < SHAREHOLDER_FETCH_BATCH_SIZE) {
+            break;
+        }
+    }
+
+    return shareholders;
 };
 
-export const useShareholdersFromProject = (id) => {
+const getShareholdersFromProject = async ({ queryKey }) => {
+    const project_id = queryKey[1];
+    const options = queryKey[2] || {};
+
+    if (!project_id) {
+        return [];
+    }
+
+    return fetchShareholdersFromProject({
+        project_id,
+        columns: options.columns,
+    });
+};
+
+export const useShareholdersFromProject = (id, options = {}) => {
     return useQuery(
-        ["shareholdersFromProject", id],
+        ["shareholdersFromProject", id, options],
         getShareholdersFromProject,
+        {
+            enabled: !!id,
+            keepPreviousData: true,
+        },
     );
 };
 
 //insert Shareholders
 const insertShareholdersList = async (data) => {
-    let shareholders = [...data.shareholdersList];
-    let currentShareholders = [...data.currentShareholders];
+    let shareholders = Array.isArray(data?.shareholdersList)
+        ? [...data.shareholdersList]
+        : [];
+    const currentShareholders = Array.isArray(data?.currentShareholders)
+        ? data.currentShareholders
+        : [];
 
     shareholders = shareholders
-        .filter((shareholder) => shareholder.registration !== "")
+        .filter(
+            (shareholder) =>
+                String(shareholder?.registration ?? "").trim() !== "",
+        )
         .map((value, key) => ({
             project_id: data.project_id,
             row: key + 1,
             ...value,
         }));
 
-    //check if the shareholder are in the current shareholders by project_id, registration, no, shares
-    var formatedShareholders = shareholders.map((shareholder) => {
-        const currentShareholder = currentShareholders.find(
-            (current) =>
-                current.project_id == shareholder.project_id &&
-                current.registration == shareholder.registration &&
-                current.no == shareholder.no &&
-                current.shares == shareholder.shares,
-        );
+    // Use a set-based key lookup so large imports do not degrade to O(n * m).
+    const currentShareholderKeys = new Set(
+        currentShareholders.map((shareholder) =>
+            buildShareholderInsertKey(shareholder),
+        ),
+    );
+    const incomingShareholderKeys = new Set();
 
-        if (!currentShareholder) {
-            return {
-                ...shareholder,
-            };
+    const formatedShareholders = shareholders.filter((shareholder) => {
+        const shareholderKey = buildShareholderInsertKey(shareholder);
+
+        if (
+            currentShareholderKeys.has(shareholderKey) ||
+            incomingShareholderKeys.has(shareholderKey)
+        ) {
+            return false;
         }
 
-        return false;
+        incomingShareholderKeys.add(shareholderKey);
+        return true;
     });
 
-    //remove false values
-    formatedShareholders = formatedShareholders.filter(
-        (shareholder) => shareholder,
-    );
-
     if (formatedShareholders?.length) {
-        const { data: shareholderData, error: shareError } = await supabase
-            .from("shareholder")
-            .insert(formatedShareholders);
+        for (
+            let index = 0;
+            index < formatedShareholders.length;
+            index += SHAREHOLDER_INSERT_BATCH_SIZE
+        ) {
+            const shareholderBatch = formatedShareholders.slice(
+                index,
+                index + SHAREHOLDER_INSERT_BATCH_SIZE,
+            );
+            const { error: shareError } = await supabase
+                .from("shareholder")
+                .insert(shareholderBatch);
+
+            if (shareError) {
+                throw shareError;
+            }
+        }
     }
 
     return true;

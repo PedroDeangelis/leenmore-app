@@ -75,7 +75,13 @@ export const useUser = (id) => {
 };
 
 //Create new USer
-const createNewUSer = async ({ email, first_name, role, password }) => {
+const createNewUSer = async ({
+	email,
+	first_name,
+	role,
+	password,
+	phone_number,
+}) => {
 	// Check if user already exists in profiles
 	const { data: existingProfiles } = await supabase
 		.from("profiles")
@@ -98,6 +104,10 @@ const createNewUSer = async ({ email, first_name, role, password }) => {
 			const { data: user } = await supabase
 				.from("profiles")
 				.update({
+					first_name: first_name,
+					role: role,
+					phone_number: phone_number,
+					email: email,
 					status: "active",
 				})
 				.eq("id", existing.id)
@@ -121,7 +131,13 @@ const createNewUSer = async ({ email, first_name, role, password }) => {
 
 	const { data: user, error: userError } = await supabase
 		.from("profiles")
-		.update({ first_name: first_name, role: role, email: email, status: "active" })
+		.update({
+			first_name: first_name,
+			role: role,
+			phone_number: phone_number,
+			email: email,
+			status: "active",
+		})
 		.eq("id", data.user.id)
 		.select();
 
@@ -163,6 +179,66 @@ export const useUserPasswordUpdate = (id, password) => {
 			},
 		}
 	);
+};
+
+//Update user profile
+const updateUserProfile = async ({ id, first_name, role, phone_number }) => {
+	if (first_name !== undefined || role !== undefined) {
+		const userMetadata = {};
+
+		if (first_name !== undefined) {
+			userMetadata.first_name = first_name;
+		}
+
+		if (role !== undefined) {
+			userMetadata.role = role;
+		}
+
+		const { error: authError } = await adminAuthClient.updateUserById(id, {
+			user_metadata: userMetadata,
+		});
+
+		if (authError) {
+			throw authError;
+		}
+	}
+
+	const profileUpdates = {};
+
+	if (first_name !== undefined) {
+		profileUpdates.first_name = first_name;
+	}
+
+	if (phone_number !== undefined) {
+		profileUpdates.phone_number = phone_number;
+	}
+
+	if (!Object.keys(profileUpdates).length) {
+		return null;
+	}
+
+	const { data, error } = await supabase
+		.from("profiles")
+		.update(profileUpdates)
+		.eq("id", id)
+		.select();
+
+	if (error) {
+		throw error;
+	}
+
+	return data?.[0];
+};
+
+export const useUserProfileUpdate = () => {
+	const queryClient = useQueryClient();
+	return useMutation(updateUserProfile, {
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries("UserList");
+			queryClient.invalidateQueries(["user", variables.id]);
+			return data;
+		},
+	});
 };
 
 //Update profile status

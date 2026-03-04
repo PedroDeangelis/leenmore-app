@@ -387,7 +387,9 @@ function SingleEmailToWorker() {
 
     const buildWorkerReportPayload = (shareholder) => ({
         a: shareholder?.no ?? "",
-        b: shareholder?.date_of_birth_code ?? "",
+        b: shareholder?.date_of_birth_code
+            ? `${shareholder?.name}${shareholder?.date_of_birth_code}`
+            : "",
         c: shareholder?.sex ?? "",
         d: shareholder?.name ?? "",
         e: shareholder?.prev_note ?? "",

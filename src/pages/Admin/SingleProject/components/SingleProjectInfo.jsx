@@ -42,7 +42,7 @@ function SingleProjectInfo({
                 onSuccess: (data) => {
                     if (data) {
                         setDownloadPATH(
-                            `${process.env.REACT_APP_STORAGE_PATH}${data}`
+                            `${process.env.REACT_APP_STORAGE_PATH}${data}`,
                         );
                     } else {
                         toast.warn(
@@ -55,11 +55,11 @@ function SingleProjectInfo({
                                 pauseOnHover: true,
                                 draggable: true,
                                 progress: undefined,
-                            }
+                            },
                         );
                     }
                 },
-            }
+            },
         );
     };
 
@@ -73,7 +73,7 @@ function SingleProjectInfo({
                     setFolderDownloadOptions(data);
                     setOpenSelectFolder(true);
                 },
-            }
+            },
         );
     };
 
@@ -116,6 +116,12 @@ function SingleProjectInfo({
                         </>
                     )}
                 </div>
+                <div></div>
+                <Card>
+                    <CardContent>
+                        <DataDisplay label={transl("eSignon ID")}></DataDisplay>
+                    </CardContent>
+                </Card>
             </div>
             <div className="mb-4 grid grid-cols-5 gap-4 ">
                 <Card className="col-span-2">
@@ -169,7 +175,7 @@ function SingleProjectInfo({
                             <CircularProgress />
                             <p className="font-bold text-stone-500 text-xs">
                                 {transl(
-                                    "Please Wait, it may take few minutes."
+                                    "Please Wait, it may take few minutes.",
                                 )}
                             </p>
                         </>

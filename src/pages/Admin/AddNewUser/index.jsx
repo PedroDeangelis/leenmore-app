@@ -6,12 +6,12 @@ import Header from "../components/Header";
 import FormNewUser from "./components/FormNewUser";
 
 function AddNewUser() {
-	return (
-		<>
-			<Header title="Add new User"></Header>
-			<FormNewUser />
-		</>
-	);
+    return (
+        <>
+            <Header title={transl("add new user")}></Header>
+            <FormNewUser />
+        </>
+    );
 }
 
 export default AddNewUser;

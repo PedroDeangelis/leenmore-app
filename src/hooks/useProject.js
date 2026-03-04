@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import { fetchShareholdersFromProject } from "./useShareholder";
 import transl from "../pages/components/translate";
 import supabase from "../utils/supabaseClient";
 
@@ -21,13 +22,33 @@ export const useProjectsList = () => {
 const getSingleProjectWithShareholders = async ({ queryKey }) => {
     const project_id = queryKey[1];
 
-    let { data, error } = await supabase
+    if (!project_id) {
+        return false;
+    }
+
+    const { data, error } = await supabase
         .from("project")
-        .select(`*, shareholder(*)`)
+        .select(`*`)
         .eq("id", project_id)
         .in("status", ["publish", "draft"]);
 
-    return data[0];
+    if (error || !data?.length) {
+        return false;
+    }
+
+    try {
+        const shareholders = await fetchShareholdersFromProject({
+            project_id,
+            columns: "*",
+        });
+
+        return {
+            ...data[0],
+            shareholder: shareholders,
+        };
+    } catch {
+        return false;
+    }
 };
 
 export const useSingleProjectWithShareholders = (id) => {
@@ -183,29 +204,48 @@ export const useProjectsSpecificUser = (user) => {
 const getProjectWithShareholders = async ({ queryKey }) => {
     const project_id = queryKey[1];
 
-    let { data, error } = await supabase
+    if (!project_id) {
+        return false;
+    }
+
+    const { data, error } = await supabase
         .from("project")
-        .select(
-            `
-        *,
-        shareholder(*),
-        submission(*, is_deleted)`,
-        )
-        .filter("submission.is_deleted", "eq", false)
+        .select(`*`)
         .eq("id", project_id)
         .in("status", ["publish", "draft"]);
 
-    let projectData = false;
-    if (!error) {
-        projectData = [...data];
-        projectData = projectData[0];
-
-        if (!projectData.shareholder?.length) {
-            return { title: transl("Project Unavailable") };
-        }
+    if (error || !data?.length) {
+        return false;
     }
 
-    return projectData;
+    try {
+        const [
+            shareholders,
+            { data: submissionData, error: submissionError },
+        ] = await Promise.all([
+            fetchShareholdersFromProject({
+                project_id,
+                columns: "*",
+            }),
+            supabase
+                .from("submission")
+                .select("id")
+                .eq("project_id", project_id)
+                .eq("is_deleted", false),
+        ]);
+
+        if (submissionError) {
+            return false;
+        }
+
+        return {
+            ...data[0],
+            shareholder: shareholders,
+            submission: submissionData || [],
+        };
+    } catch {
+        return false;
+    }
 };
 
 export const useProjectWithShareholders = (id) => {

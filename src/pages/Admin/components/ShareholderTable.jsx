@@ -209,6 +209,7 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                     </TableHead>
                     <TableBody>
                         {list
+                            .slice(0, 500)
                             .sort((a, b) => a.no - b.no)
                             .map((value, key) => {
                                 var chip = "";

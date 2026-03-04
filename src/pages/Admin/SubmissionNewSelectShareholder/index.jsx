@@ -10,7 +10,10 @@ import SearchProjectBar from "../components/SearchProjectBar";
 function SubmissionNewSelectShareholder() {
     const { project_id } = useParams();
     const { data: shareholders, isLoading } =
-        useShareholdersFromProject(project_id);
+        useShareholdersFromProject(project_id, {
+            columns:
+                "id, registration, name, date_of_birth_code, sex, shares, shares_total, address, result",
+        });
 
     const [searchShareholder, setSearchShareholder] = useState("");
     const [searchShareholderFilter, setSearchShareholderFilter] = useState([]);

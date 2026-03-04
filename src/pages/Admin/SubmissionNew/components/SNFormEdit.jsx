@@ -24,7 +24,7 @@ function SNFormEdit({ submission }) {
     const [date, setDate] = useState(moment(submission.date).format("Y-MM-DD"));
     const [result, setResult] = useState(submission.result);
     const [contactWorker, setContactWorker] = useState(
-        submission.contact_worker
+        submission.contact_worker,
     );
     const [note, setNote] = useState(submission.note);
     const [submitingForm, setSubmitingForm] = useState(false);
@@ -38,7 +38,6 @@ function SNFormEdit({ submission }) {
         };
     });
 
-    console.log('submission', submission)
     const [attachments, setAttachments] = useState(submission.files || []);
 
     const handleSubmit = (e) => {
@@ -73,7 +72,7 @@ function SNFormEdit({ submission }) {
 
                     setSubmissionEdit(null);
                 },
-            }
+            },
         );
     };
 
@@ -209,41 +208,42 @@ function SNFormEdit({ submission }) {
 
                     {/* List attachments and option to download */}
                     <div className="grid grid-cols-3 gap-4 mb-4">
-                    {
-                        attachments.length > 0 && (
+                        {attachments.length > 0 &&
                             attachments.map((file, index) => (
-                                <div key={index} className="relative ">     
+                                <div key={index} className="relative ">
                                     {
                                         // check if file is an image
-                                        (file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png') || file.endsWith('.gif')) ? (                                                                       
+                                        file.endsWith(".jpg") ||
+                                        file.endsWith(".jpeg") ||
+                                        file.endsWith(".png") ||
+                                        file.endsWith(".gif") ? (
                                             <img
                                                 src={`${process.env.REACT_APP_STORAGE_PATH}${file}`}
                                                 alt="attachment preview"
                                                 className="mb-2"
-                                            />) : (
-                                                <span></span>
-                                            )
-                                    }   
-                                    <div className="grid grid-cols-2 gap-2 item-center"> 
-                                    <Button
-                                        onClick={() => handleDownload(file)}
-                                        variant="outlined"
-                                        size="small"
+                                            />
+                                        ) : (
+                                            <span></span>
+                                        )
+                                    }
+                                    <div className="grid grid-cols-2 gap-2 item-center">
+                                        <Button
+                                            onClick={() => handleDownload(file)}
+                                            variant="outlined"
+                                            size="small"
                                         >
-                                        {transl("Download")}
-                                    </Button>
-                                    <Button 
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => handlePreview(file)}
+                                            {transl("Download")}
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => handlePreview(file)}
                                         >
-                                        {transl("Preview")}
-                                    </Button>
+                                            {transl("Preview")}
+                                        </Button>
                                     </div>
                                 </div>
-                            ))
-                        )
-                    }
+                            ))}
                     </div>
                     <AttachmentPreviewDialog
                         open={Boolean(previewFile)}

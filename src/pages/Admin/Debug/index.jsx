@@ -92,7 +92,7 @@ function Debug() {
         if (!newShareholders) {
             console.log("No new shareholders");
         } else {
-            console.log("newShareholders", newShareholders);
+            // console.log("newShareholders", newShareholders);
 
             setShareholders(newShareholders);
         }

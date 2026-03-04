@@ -18,7 +18,6 @@ function ReceiptSingle() {
 
     useEffect(() => {
         if (!isLoadingReceipt && !receipt) {
-            console.log("fiaaarst");
             navigate(`/app/my-receipts`);
         }
     }, [isLoadingReceipt, receipt]);

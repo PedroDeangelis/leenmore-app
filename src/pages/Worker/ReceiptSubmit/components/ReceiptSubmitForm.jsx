@@ -38,7 +38,7 @@ function ReceiptSubmitForm({
     const { data: usermeta } = useUser(currentUser?.id);
     const { data: usageHistoryOptions, isLoading } = useOption(
         "usage_history_schema",
-        "multivalue"
+        "multivalue",
     );
     const createReceipt = useReceiptCreate();
     const updateReceipt = useReceiptUpdate();
@@ -167,7 +167,7 @@ function ReceiptSubmitForm({
 
                         setIsEditing(false);
                     },
-                }
+                },
             );
         } else {
             createReceipt.mutate(
@@ -200,7 +200,7 @@ function ReceiptSubmitForm({
                             progress: undefined,
                         });
                     },
-                }
+                },
             );
         }
     };
@@ -244,7 +244,7 @@ function ReceiptSubmitForm({
                         // clean cache
                         queryClient.invalidateQueries("OptionItem");
                     }
-                }
+                },
             )
             .subscribe();
 
@@ -254,7 +254,6 @@ function ReceiptSubmitForm({
     }, []);
 
     useEffect(() => {
-        console.log("receiptSubmissionStatus", receiptSubmissionStatus);
         if (receiptSubmissionStatus == "open") {
             setLocked(receiptSubmissionStatus);
         }
@@ -272,20 +271,25 @@ function ReceiptSubmitForm({
         <form onSubmit={handleSubmit} className="pt-7">
             {/* DATE */}
             <p className="text-red-500 text-sm">{errors.date && errors.date}</p>
-            <div className="relative"
-                onClick={() => setIsDateFocused(true)}
-            >
-                <p className="absolute top-0 left-0 border border-slate-300 pl-3  pt-1 bg-white w-full rounded flex items-center" style={{
-                    height: '56px', 
-                    backgroundColor: '#f3f5f9',
-                    opacity: isDateFocused ? 0 : 1
-                    }}>실제 사용한 영수증 날짜를 기입해주세요.</p>
+            <div className="relative" onClick={() => setIsDateFocused(true)}>
+                <p
+                    className="absolute top-0 left-0 border border-slate-300 pl-3  pt-1 bg-white w-full rounded flex items-center"
+                    style={{
+                        height: "56px",
+                        backgroundColor: "#f3f5f9",
+                        opacity: isDateFocused ? 0 : 1,
+                    }}
+                >
+                    실제 사용한 영수증 날짜를 기입해주세요.
+                </p>
                 <FormControl
                     variant="outlined"
                     className="w-full "
                     sx={{ mb: "20px", opacity: isDateFocused ? 1 : 0 }}
                 >
-                    <InputLabel htmlFor="date-input" shrink>실제 사용한 영수증 날짜를 기입해주세요</InputLabel>
+                    <InputLabel htmlFor="date-input" shrink>
+                        실제 사용한 영수증 날짜를 기입해주세요
+                    </InputLabel>
                     <OutlinedInput
                         id="date-input"
                         value={date}
@@ -296,17 +300,17 @@ function ReceiptSubmitForm({
                         inputProps={{ max: koreanToday }}
                         sx={{
                             "& input::-webkit-clear-button": {
-                            display: "none",
+                                display: "none",
                             },
                             "& input::-webkit-inner-spin-button": {
-                            display: "none",
+                                display: "none",
                             },
                             "::-webkit-clear-button": {
                                 display: "none",
-                            }
+                            },
                         }}
                     />
-                </FormControl>                
+                </FormControl>
             </div>
 
             {/* USAGE HISTORY */}
@@ -420,7 +424,6 @@ function ReceiptSubmitForm({
                     {transl("Please fill all the fields, to be able to upload")}
                 </p>
             )}
-
 
             <Button
                 variant="contained"

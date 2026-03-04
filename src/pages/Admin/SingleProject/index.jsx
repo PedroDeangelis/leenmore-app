@@ -19,6 +19,9 @@ function SingleProject() {
     const updateProjectMutation = useProjecUpdate();
     const { data: project, isLoading: isProjectsLoading } =
         useProjectWithShareholders(id);
+    const projectShareholders = Array.isArray(project?.shareholder)
+        ? project.shareholder
+        : [];
 
     const handlePusblishProject = (status) => {
         //create a alert to confirm the action
@@ -42,10 +45,10 @@ function SingleProject() {
                                 pauseOnHover: true,
                                 draggable: true,
                                 progress: undefined,
-                            }
+                            },
                         );
                     },
-                }
+                },
             );
         }
     };
@@ -61,8 +64,10 @@ function SingleProject() {
 
     return (
         <>
-            {isProjectsLoading && !project ? (
+            {isProjectsLoading ? (
                 <p>{transl("Loading")}</p>
+            ) : !project ? (
+                <p>{transl("Project Unavailable")}</p>
             ) : (
                 <div>
                     <Header
@@ -131,9 +136,9 @@ function SingleProject() {
                         project={project}
                         results={project.results}
                         shareholderResults={getAllResultsFromSubmission(
-                            project?.shareholder
+                            projectShareholders,
                         )}
-                        shareholdersCount={project?.shareholder?.length}
+                        shareholdersCount={projectShareholders.length}
                     />
                     <SingleProjectShareholders project={project} />
                 </div>

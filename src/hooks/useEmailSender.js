@@ -44,7 +44,7 @@ const EmailSender = async ({
         .then((resp) => {
             response = resp.data;
 
-            console.log("resp.data", resp.data);
+            // console.log("resp.data", resp.data);
         });
 
     return response;

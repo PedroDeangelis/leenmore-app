@@ -31,24 +31,17 @@ export default function setShareholderUpdateList(csv) {
     const indexes = {
         id: getIndex("uuid", "id") ?? 0,
         no: getIndex("no", "번호") ?? 1,
+        registration: getIndex("registration", "실명번호") ?? 2,
+        sex: getIndex("성별") ?? 3,
+        name: getIndex("주주명") ?? 4,
         shares: getIndex("numberofshares", "주식수") ?? 5,
-        shares_total:
-            getIndex("totalnumberofshares", "총보유주식수", "총소유주식수") ??
-            6,
-        eletronic_voting:
-            getIndex("eletronicvoting", "전자투표", "전투날짜") ?? 7,
-        database: getIndex("database", "종복여부", "중복여부") ?? 8,
-        contact_info:
-            getIndex("contact", "contactinfo", "전화번호", "전투연락처") ?? 9,
-        address: getIndex("address", "주소") ?? 10,
-        contact_worker: getIndex("contactforworker", "작업자연락처") ?? 11,
-        user: getIndex("worker", "담당자") ?? 12,
-        registration: getIndex(
-            "residentregistrationnumber",
-            "registration",
-            "주민등록번호",
-            "실명번호",
-        ),
+        shares_total: getIndex("총소유주식수") ?? 6,
+        eletronic_voting: getIndex("eletronicvoting", "전자투표") ?? 7,
+        address: getIndex("address", "주소") ?? 8,
+        contact_info: getIndex("contactinfo", "주소서치") ?? 9,
+        database: getIndex("database", "구연락처") ?? 10,
+        contact_worker: getIndex("연락처") ?? 11,
+        user: getIndex("worker", "활동가") ?? 12,
         prev_comment: getIndex("prevcomment", "구 판단") ?? 13,
         prev_result: getIndex("prevresult", "구 멘트") ?? 14,
         prev_note: getIndex("prevnote", "비고") ?? 15,
