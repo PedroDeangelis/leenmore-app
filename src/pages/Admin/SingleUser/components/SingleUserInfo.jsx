@@ -6,11 +6,21 @@ import transl from "../../../components/translate";
 import DataDisplay from "../../components/DataDisplay";
 import EditIcon from "@mui/icons-material/Edit";
 
-function SingleUserInfo({ id, first_name, email, role, status, phone_number }) {
+function SingleUserInfo({
+    id,
+    first_name,
+    email,
+    email_receiver,
+    role,
+    status,
+    phone_number,
+}) {
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingPhoneNumber, setIsEditingPhoneNumber] = useState(false);
+    const [isEditingEmailReceiver, setIsEditingEmailReceiver] = useState(false);
     const [name, setName] = useState(first_name || "");
     const [phoneNumber, setPhoneNumber] = useState(phone_number || "");
+    const [emailReceiver, setEmailReceiver] = useState(email_receiver || "");
     const userProfileUpdateMutation = useUserProfileUpdate();
 
     useEffect(() => {
@@ -20,6 +30,10 @@ function SingleUserInfo({ id, first_name, email, role, status, phone_number }) {
     useEffect(() => {
         setPhoneNumber(phone_number || "");
     }, [phone_number]);
+
+    useEffect(() => {
+        setEmailReceiver(email_receiver || "");
+    }, [email_receiver]);
 
     const handleNameSave = (e) => {
         e.preventDefault();
@@ -86,11 +100,42 @@ function SingleUserInfo({ id, first_name, email, role, status, phone_number }) {
         setIsEditingPhoneNumber(false);
     };
 
+    const handleEmailReceiverSave = (e) => {
+        e.preventDefault();
+
+        const trimmedEmailReceiver = emailReceiver.trim();
+
+        if (trimmedEmailReceiver === (email_receiver || "")) {
+            setIsEditingEmailReceiver(false);
+            return;
+        }
+
+        userProfileUpdateMutation.mutate(
+            {
+                id: id,
+                first_name: first_name,
+                role: role,
+                email_receiver: trimmedEmailReceiver,
+            },
+            {
+                onSuccess: () => {
+                    toast.success(transl("User updated successfully"));
+                    setIsEditingEmailReceiver(false);
+                },
+            },
+        );
+    };
+
+    const handleEmailReceiverCancel = () => {
+        setEmailReceiver(email_receiver || "");
+        setIsEditingEmailReceiver(false);
+    };
+
     return (
         <Card className="mb-4">
             <CardContent>
-                <div className="grid grid-cols-4 gap-4">
-                    <div className="col-span-1">
+                <div className="grid grid-cols-5 gap-4">
+                    <div className="">
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                             {transl("Title")}
                         </p>
@@ -194,6 +239,61 @@ function SingleUserInfo({ id, first_name, email, role, status, phone_number }) {
                                 >
                                     {transl("Edit phone number")}
                                 </Button>
+                            </div>
+                        )}
+                    </div>
+                    <div className="col-span-1">
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            {transl("Email Receiver")}
+                        </p>
+                        {isEditingEmailReceiver ? (
+                            <form
+                                onSubmit={handleEmailReceiverSave}
+                                className="flex items-end gap-2"
+                            >
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    variant="outlined"
+                                    type="email"
+                                    value={emailReceiver}
+                                    onChange={(e) =>
+                                        setEmailReceiver(e.target.value)
+                                    }
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={
+                                        userProfileUpdateMutation.isLoading
+                                    }
+                                >
+                                    {transl("save")}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="text"
+                                    onClick={handleEmailReceiverCancel}
+                                    disabled={
+                                        userProfileUpdateMutation.isLoading
+                                    }
+                                >
+                                    {transl("cancel")}
+                                </Button>
+                            </form>
+                        ) : (
+                            <div className="flex items-center gap-4">
+                                <p className="text-lg">
+                                    {email_receiver || transl("Not provided")}
+                                </p>
+                                <Button
+                                    size="small"
+                                    variant="text"
+                                    onClick={() =>
+                                        setIsEditingEmailReceiver(true)
+                                    }
+                                    startIcon={<EditIcon />}
+                                ></Button>
                             </div>
                         )}
                     </div>

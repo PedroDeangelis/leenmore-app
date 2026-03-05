@@ -15,6 +15,7 @@ import SelectFolderDialog from "./SelectFolderDialog";
 import EditIcon from "@mui/icons-material/Edit";
 import EditProjectTitlenDate from "./EditProjectTitlenDate";
 import ProjectMessageEditing from "./ProjectMessageEditing";
+import EditProjectLinkMangeId from "./EditProjectLinkMangeId";
 
 function SingleProjectInfo({
     title,
@@ -98,7 +99,7 @@ function SingleProjectInfo({
 
     return (
         <>
-            <div className="mb-6 grid grid-cols-5 gap-4 items-center">
+            <div className="mb-4 grid grid-cols-5 gap-4 items-center">
                 <ProjectMessageEditing
                     message={project.message}
                     projectID={project.id}
@@ -117,11 +118,7 @@ function SingleProjectInfo({
                     )}
                 </div>
                 <div></div>
-                <Card>
-                    <CardContent>
-                        <DataDisplay label={transl("eSignon ID")}></DataDisplay>
-                    </CardContent>
-                </Card>
+                <EditProjectLinkMangeId project={project} />
             </div>
             <div className="mb-4 grid grid-cols-5 gap-4 ">
                 <Card className="col-span-2">

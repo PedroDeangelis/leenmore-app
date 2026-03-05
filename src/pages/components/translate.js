@@ -296,6 +296,8 @@ export default function transl(char) {
         "phone number": "전화번호",
         "add new user": "새 사용자 추가",
         "edit phone number": "전화번호 수정",
+        "edit email receiver": "이메일 수신자 수정",
+        "email receiver": "이메일 수신자",
     };
 
     return map[key] ? map[key] : char;

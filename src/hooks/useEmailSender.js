@@ -63,7 +63,7 @@ const getWorkersEmails = async (workers) => {
 
     const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, email, first_name")
+        .select("id, email, email_receiver, first_name")
         .eq("status", "active")
         .in("first_name", names);
 
@@ -76,7 +76,7 @@ const getWorkersEmails = async (workers) => {
         .filter((profile) => profile?.id && profile?.email)
         .map((profile) => ({
             worker_id: profile.id,
-            email: profile.email,
+            email: profile.email_receiver || profile.email,
             // email: "deangelissp@gmail.com",
         }));
 };

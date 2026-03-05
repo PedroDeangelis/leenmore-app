@@ -1,8 +1,10 @@
+import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import supabase from "../utils/supabaseClient";
 
 const SHAREHOLDER_FETCH_BATCH_SIZE = 1000;
 const SHAREHOLDER_INSERT_BATCH_SIZE = 1000;
+const EMPTY_MISSING_SHAREHOLDERS = [];
 
 const buildShareholderInsertKey = (shareholder = {}) =>
     [
@@ -34,11 +36,7 @@ export const fetchShareholdersFromProject = async ({
 }) => {
     const shareholders = [];
 
-    for (
-        let from = 0;
-        ;
-        from += SHAREHOLDER_FETCH_BATCH_SIZE
-    ) {
+    for (let from = 0; ; from += SHAREHOLDER_FETCH_BATCH_SIZE) {
         const to = from + SHAREHOLDER_FETCH_BATCH_SIZE - 1;
         const { data, error } = await supabase
             .from("shareholder")
@@ -388,4 +386,68 @@ const getAllShareholdersByUser = async ({ queryKey }) => {
 
 export const useAllShareholdersByUser = (user) => {
     return useQuery(["AllShareholdersByUser", user], getAllShareholdersByUser);
+};
+
+// getMissingShareholdersFromEsignon
+// send the project id to https://leenmore-storage.lndo.site/get-not-found-shareholders and get the list of shareholders that are not found in esignon
+const normalizeMissingShareholdersPayload = (payload) => {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    if (Array.isArray(payload?.missingShareholders)) {
+        return payload.missingShareholders;
+    }
+
+    if (Array.isArray(payload?.shareholders)) {
+        return payload.shareholders;
+    }
+
+    if (Array.isArray(payload?.data)) {
+        return payload.data;
+    }
+
+    return EMPTY_MISSING_SHAREHOLDERS;
+};
+
+const getMissingShareholdersFromEsignon = async (project_id) => {
+    const normalizedProjectId =
+        typeof project_id === "object"
+            ? (project_id?.project?.id ?? project_id?.id)
+            : project_id;
+
+    if (!normalizedProjectId) {
+        return [];
+    }
+
+    const response = await axios.post(
+        `${process.env.REACT_APP_STORAGE_PATH}get-not-found-shareholders`,
+        // `https://leenmore-storage.lndo.site/get-not-found-shareholders`,
+        {
+            project_id: normalizedProjectId,
+            token: process.env.REACT_APP_STORAGE_AUTH_KEY,
+        },
+        {
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Content-Type": "multipart/form-data",
+            },
+        },
+    );
+
+    return normalizeMissingShareholdersPayload(response.data);
+};
+
+export const useMissingShareholdersFromEsignon = (project) => {
+    const project_id = project?.project?.id ?? project?.id;
+
+    const mutation = useMutation(async (providedProjectId) => {
+        const targetProjectId = providedProjectId ?? project_id;
+        return await getMissingShareholdersFromEsignon(targetProjectId);
+    });
+
+    return {
+        ...mutation,
+        missingShareholders: mutation.data ?? EMPTY_MISSING_SHAREHOLDERS,
+    };
 };

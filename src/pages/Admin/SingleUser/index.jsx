@@ -89,6 +89,7 @@ function SingleUser() {
                         id={data.id}
                         first_name={data.first_name}
                         email={data.email}
+                        email_receiver={data.email_receiver}
                         role={data.role}
                         status={data.status}
                         phone_number={data.phone_number}

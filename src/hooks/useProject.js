@@ -219,20 +219,18 @@ const getProjectWithShareholders = async ({ queryKey }) => {
     }
 
     try {
-        const [
-            shareholders,
-            { data: submissionData, error: submissionError },
-        ] = await Promise.all([
-            fetchShareholdersFromProject({
-                project_id,
-                columns: "*",
-            }),
-            supabase
-                .from("submission")
-                .select("id")
-                .eq("project_id", project_id)
-                .eq("is_deleted", false),
-        ]);
+        const [shareholders, { data: submissionData, error: submissionError }] =
+            await Promise.all([
+                fetchShareholdersFromProject({
+                    project_id,
+                    columns: "*",
+                }),
+                supabase
+                    .from("submission")
+                    .select("*")
+                    .eq("project_id", project_id)
+                    .eq("is_deleted", false),
+            ]);
 
         if (submissionError) {
             return false;

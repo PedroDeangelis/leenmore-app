@@ -17,6 +17,7 @@ import transl from "../../../components/translate";
 function FormNewUser() {
     const firstNameRef = useRef();
     const emailNameRef = useRef();
+    const emailReceiverRef = useRef();
     const phoneNumberRef = useRef();
     const passwordNameRef = useRef();
     const [role, setRole] = useState("worker");
@@ -34,6 +35,7 @@ function FormNewUser() {
                 email: emailNameRef.current.value,
                 first_name: firstNameRef.current.value,
                 phone_number: phoneNumberRef.current.value,
+                email_receiver: emailReceiverRef.current.value,
                 role: role,
                 password: passwordNameRef.current.value,
             },
@@ -72,6 +74,14 @@ function FormNewUser() {
                         label={transl("email")}
                         type="email"
                         inputRef={emailNameRef}
+                    />
+                    <TextField
+                        required
+                        sx={{ width: "100%", marginBottom: "16px" }}
+                        id="outlined-required"
+                        label={transl("email receiver")}
+                        type="email"
+                        inputRef={emailReceiverRef}
                     />
                     <TextField
                         sx={{ width: "100%", marginBottom: "16px" }}
