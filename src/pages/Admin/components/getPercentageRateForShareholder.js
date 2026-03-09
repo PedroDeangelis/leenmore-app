@@ -8,7 +8,19 @@ export default function getPercentageRateForShareholder(
     shares_target,
 ) {
     if (!shareholders?.length) return null;
-    var resultList = results.map((result) => JSON.parse(result));
+    const normalizeOrder = (orderValue, fallbackValue) => {
+        const numericOrder = Number(orderValue);
+        return Number.isFinite(numericOrder) ? numericOrder : fallbackValue;
+    };
+
+    var resultList = results.map((result, index) => {
+        const parsedResult = JSON.parse(result);
+
+        return {
+            ...parsedResult,
+            order: normalizeOrder(parsedResult?.order, index),
+        };
+    });
 
     const eletronicVoteLabel = transl("eletronic vote");
     const eproxyLinkLabel = transl("eproxy link");
@@ -22,7 +34,7 @@ export default function getPercentageRateForShareholder(
     const greenOrders = resultList
         .map((item, index) => ({
             color: item?.color,
-            order: Number.isFinite(item?.order) ? item.order : index,
+            order: normalizeOrder(item?.order, index),
         }))
         .filter((item) => item.color === "green")
         .map((item) => item.order);
@@ -66,7 +78,7 @@ export default function getPercentageRateForShareholder(
 
         if (item.eletronic_voting?.length) {
             result = eletronicVoteLabel;
-        } else if (hasEproxyLink(item) && isGreenResult) {
+        } else if (hasEproxyLink(item)) {
             result = eproxyLinkLabel;
         }
 
@@ -99,7 +111,7 @@ export default function getPercentageRateForShareholder(
             name: item.name,
             color: item.color,
             total: total,
-            order: item.order,
+            order: normalizeOrder(item.order, key),
         });
     });
 
@@ -143,7 +155,11 @@ export default function getPercentageRateForShareholder(
     });
 
     return {
-        results: finalTotal.sort((a, b) => a.order - b.order),
+        results: finalTotal.sort(
+            (a, b) =>
+                normalizeOrder(a.order, Number.MAX_SAFE_INTEGER) -
+                normalizeOrder(b.order, Number.MAX_SAFE_INTEGER)
+        ),
         total: formatNumber(totalTotal),
         percentage: ((totalTotal / shares_target) * 100).toFixed(2),
         colorTotal: colorTotal,

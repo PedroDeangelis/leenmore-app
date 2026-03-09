@@ -21,8 +21,8 @@ export const SHAREHOLDER_HEADERS = [
     "구 판단", // M - 12
     "구 멘트", // N - 13
     "비고", // O - 14
-    "전자위임날짜", // P - 15
-    "전자위임연락처", // Q - 16
+    "전자위임연락처", // P - 15
+    "전자위임날짜", // Q - 16
 ];
 
 const REQUIRED_HEADER_INDEXES = [2, 4, 5, 6]; // 1-based indexes

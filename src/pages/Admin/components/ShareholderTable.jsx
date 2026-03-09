@@ -200,10 +200,10 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                                 비고
                             </TableCell>
                             <TableCell style={{ minWidth: 150 }}>
-                                전자위임날짜
+                                전자위임연락처
                             </TableCell>
                             <TableCell style={{ minWidth: 150 }}>
-                                전자위임연락처
+                                전자위임날짜
                             </TableCell>
                         </TableRow>
                     </TableHead>
@@ -217,6 +217,17 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                                     chip = JSON.parse(
                                         projectResult[value.result],
                                     );
+                                }
+
+                                if (
+                                    isEditble &&
+                                    value.api_recipient_contact &&
+                                    value.api_recipient_completion_date
+                                ) {
+                                    chip = {
+                                        name: transl("Eproxy link"),
+                                        color: "green",
+                                    };
                                 }
 
                                 return (
