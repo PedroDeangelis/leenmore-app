@@ -1,5 +1,4 @@
 import axios from "axios";
-import { m } from "framer-motion";
 import { useMutation } from "react-query";
 
 const generateWorkerReport = async ({
@@ -29,8 +28,7 @@ const generateWorkerReport = async ({
             },
             {
                 headers: {
-                    "Access-Control-Allow-Origin": "*",
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": "application/json",
                 },
             },
         )

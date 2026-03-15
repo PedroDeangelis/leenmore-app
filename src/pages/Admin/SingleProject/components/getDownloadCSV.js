@@ -1,7 +1,7 @@
 import moment from "moment/moment";
 import transl from "../../../components/translate";
 
-export default function getDownloadCSV({ project }) {
+export default function getDownloadCSV({ project, projectShareholders }) {
     let headers = [
         transl("No"),
         transl("Company"),
@@ -56,7 +56,7 @@ export default function getDownloadCSV({ project }) {
     });
 
     //Organize Shareholders Info
-    let csvData = project.shareholder.map((customer, mainKey) => {
+    let csvData = projectShareholders.map((customer, mainKey) => {
         let shareholderSubmissions = project?.submission
             ?.filter((sub) => {
                 return sub.shareholder_id == customer.id;

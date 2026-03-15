@@ -161,12 +161,16 @@ export const useProjecUpdate = (project_id, meta) => {
                 await queryClient.invalidateQueries(
                     "ProjectSingleWithShareholders",
                 );
+                await queryClient.invalidateQueries(
+                    "ProjectSingleAndSubmissions",
+                );
                 return data;
             },
             onSettled: () => {
                 queryClient.refetchQueries("ProjectsList");
                 queryClient.refetchQueries("ProjectSingle");
                 queryClient.refetchQueries("ProjectSingleWithShareholders");
+                queryClient.refetchQueries("ProjectSingleAndSubmissions");
             },
         },
     );
@@ -297,4 +301,45 @@ const getAllProjectsSimpleList = async () => {
 
 export const useAllProjectsSimpleList = () => {
     return useQuery(["AllProjectsSimpleList"], getAllProjectsSimpleList);
+};
+
+// Get Use Project and Submissions
+const getProjectAndSubmissions = async ({ queryKey }) => {
+    const project_id = queryKey[1];
+
+    if (!project_id) {
+        return false;
+    }
+
+    const { data, error } = await supabase
+        .from("project")
+        .select(`*`)
+        .eq("id", project_id)
+        .in("status", ["publish", "draft"]);
+
+    if (error || !data?.length) {
+        return false;
+    }
+
+    const { data: submissionData, error: submissionError } = await supabase
+        .from("submission")
+        .select("*")
+        .eq("project_id", project_id)
+        .eq("is_deleted", false);
+
+    if (submissionError) {
+        return false;
+    }
+
+    return {
+        ...data[0],
+        submission: submissionData || [],
+    };
+};
+
+export const useProjectAndSubmissions = (id) => {
+    return useQuery(
+        ["ProjectSingleAndSubmissions", id],
+        getProjectAndSubmissions,
+    );
 };

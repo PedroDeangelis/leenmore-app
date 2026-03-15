@@ -43,7 +43,10 @@ function ProjectLoopItem({
             <Card sx={{ marginBottom: "14px" }}>
                 <CardContent sx={{ position: "relative" }}>
                     {/* if has eletronic_voting  */}
-                    <div className="md:absolute md:top-5 left-0 w-full  mb-1 text-center  text-base flex items-center gap-2 justify-center">
+                    <div
+                        className="md:absolute md:top-5 left-0 w-full  mb-1 text-center  text-base flex flex-col items-center gap-7 justify-center"
+                        style={{ fontSize: "40px" }}
+                    >
                         {eletronic_voting && (
                             <p className=" text-blue-700 ">(전자투표 완료)</p>
                         )}

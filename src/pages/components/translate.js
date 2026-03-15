@@ -286,8 +286,8 @@ export default function transl(char) {
         "privacy consent file": "개인정보 동의",
         "email to worker": "활동가에게 이메일 보내기",
         vacant: "담당자 없음",
-        "recipient contact": "전자위임날짜",
-        "completion date": "전자위임연락처",
+        "recipient contact": "전자위임연락처",
+        "completion date": "전자위임날짜",
         "eproxy completed": "전자위임 완료",
         "create at": "생성 날짜",
         "select all": "전체 선택",
@@ -298,6 +298,7 @@ export default function transl(char) {
         "edit phone number": "전화번호 수정",
         "edit email receiver": "이메일 수신자 수정",
         "email receiver": "이메일 수신자",
+        "loading shareholders": "주주 불러오는 중",
     };
 
     return map[key] ? map[key] : char;

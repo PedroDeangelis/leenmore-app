@@ -33,7 +33,60 @@ const normalizeWorksheetCell = (value) => {
     }
 
     if (Array.isArray(value)) {
-        return value.join(" / ");
+        const tempValue = value
+            .map((v) => (typeof v === "string" ? v.trim() : v))
+            .filter((v) => {
+                if (v === null || v === undefined) {
+                    return false;
+                }
+
+                if (typeof v === "string") {
+                    const lowerValue = v.toLowerCase();
+                    return (
+                        lowerValue !== "" &&
+                        lowerValue !== "null" &&
+                        lowerValue !== "undefined"
+                    );
+                }
+
+                return true;
+            });
+
+        if (tempValue === null || tempValue.length === 0) {
+            return "";
+        }
+
+        const isPhoneLike = (input) => {
+            if (typeof input !== "string") {
+                return false;
+            }
+
+            const compactValue = input.replace(/\s+/g, "");
+            if (!/^[+()\-\d]+$/.test(compactValue)) {
+                return false;
+            }
+
+            const digitLength = compactValue.replace(/\D/g, "").length;
+            return digitLength >= 7;
+        };
+
+        const hasPhoneNumber = tempValue.some(isPhoneLike);
+
+        if (hasPhoneNumber) {
+            // remove duplicates while preserving order
+            const seen = new Set();
+            const uniqueValues = tempValue.filter((item) => {
+                if (seen.has(item)) {
+                    return false;
+                }
+                seen.add(item);
+                return true;
+            });
+
+            return uniqueValues.join(", ");
+        }
+
+        return tempValue.join(" / ");
     }
 
     if (typeof value === "object") {
@@ -75,10 +128,12 @@ const formatMissingShareholderRow = (shareholder) => {
     ];
 };
 
-function DownloadCSV({ project }) {
+function DownloadCSV({ project, projectShareholders }) {
     const { isLoading, mutateAsync: fetchMissingShareholders } =
         useMissingShareholdersFromEsignon(project);
-    const downloadData = project ? getDownloadCSV({ project }) : null;
+    const downloadData = project
+        ? getDownloadCSV({ project, projectShareholders })
+        : null;
 
     const handleDownload = async () => {
         if (!project || !downloadData) {
@@ -103,7 +158,7 @@ function DownloadCSV({ project }) {
             downloadData.body,
         );
 
-        if (missingShareholders.length > 0) {
+        if (missingShareholders && missingShareholders.length > 0) {
             addWorksheet(
                 workbook,
                 sanitizeWorksheetName(

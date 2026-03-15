@@ -80,7 +80,7 @@ function FilterSubmissionFiltering({
                             };
                         }
                     })
-                    .filter((item) => item !== undefined)
+                    .filter((item) => item !== undefined),
             );
         }
     }, [submission]);
@@ -168,6 +168,15 @@ function FilterSubmissionFiltering({
                                 </MenuItem>
                             );
                         })}
+                        {/* include menu item eproxy_link */}
+                        <MenuItem key="eproxy_link" value="eproxy_link">
+                            <Checkbox
+                                checked={
+                                    resultSelect.indexOf("eproxy_link") > -1
+                                }
+                            />
+                            {transl("eproxy link")}
+                        </MenuItem>
                     </Select>
                 </FormControl>
             </div>

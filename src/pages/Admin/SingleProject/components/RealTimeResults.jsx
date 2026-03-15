@@ -212,84 +212,97 @@ function RealTimeResults({ project }) {
                     </p>
                 </div>
                 {resultsRate &&
-                    resultsRate?.results?.map((result) => (
-                        <div
-                            style={{
-                                backgroundColor: rgba(
-                                    `${result.colorHex}`,
-                                    0.4,
-                                ),
-                            }}
-                            className="grid grid-cols-6 text-sm text-gray-700  font-medium items-center"
-                            key={result.result}
-                        >
-                            <p className="col-span-2 uppercase text-black  py-2 px-4">
-                                <Link
-                                    to={`/dashboard/submission/project/${project.id}?result=${result.result}`}
-                                >
-                                    {result.name}
-                                </Link>
-                            </p>
-                            <p className="text-center py-2 px-4">
-                                {result.total}
-                            </p>
-                            <p className="text-center py-2 px-4">
-                                {result.percentage}%
-                            </p>
+                    resultsRate?.results?.map((result) => {
+                        let linkResultGetValue = result.result;
 
-                            {resultsRate.colorTotal.hasOwnProperty(
-                                result.color,
-                            ) &&
-                            resultsRate.colorTotal[result.color]["result"] ==
-                                result.result ? (
-                                <>
-                                    <p
-                                        className="text-center py-2 px-4 font-bold"
-                                        style={{
-                                            backgroundColor: rgba(
-                                                `${result.colorHex}`,
-                                                0.8,
-                                            ),
-                                        }}
+                        if (result.name === "위임(전자위임)") {
+                            linkResultGetValue = "eproxy_link";
+                        }
+
+                        return (
+                            <div
+                                style={{
+                                    backgroundColor: rgba(
+                                        `${result.colorHex}`,
+                                        0.4,
+                                    ),
+                                }}
+                                className="grid grid-cols-6 text-sm text-gray-700  font-medium items-center"
+                                key={result.result}
+                            >
+                                <p className="col-span-2 uppercase text-black  py-2 px-4">
+                                    <Link
+                                        to={`/dashboard/submission/project/${project.id}?result=${linkResultGetValue}`}
                                     >
-                                        {
-                                            resultsRate.colorTotal[
+                                        <span
+                                            className={`${(result.name === "위임(전자위임)" && "font-bold") || ""}`}
+                                        >
+                                            {result.name}
+                                        </span>
+                                    </Link>
+                                </p>
+                                <p className="text-center py-2 px-4">
+                                    {result.total}
+                                </p>
+                                <p className="text-center py-2 px-4">
+                                    {result.percentage}%
+                                </p>
+
+                                {resultsRate.colorTotal.hasOwnProperty(
+                                    result.color,
+                                ) &&
+                                resultsRate.colorTotal[result.color][
+                                    "result"
+                                ] == result.result ? (
+                                    <>
+                                        <p
+                                            className="text-center py-2 px-4 font-bold"
+                                            style={{
+                                                backgroundColor: rgba(
+                                                    `${result.colorHex}`,
+                                                    0.8,
+                                                ),
+                                            }}
+                                        >
+                                            {
+                                                resultsRate.colorTotal[
+                                                    result.color
+                                                ]["total"]
+                                            }
+                                        </p>
+                                        <p
+                                            className="text-center py-2 px-4 font-bold"
+                                            style={{
+                                                backgroundColor: rgba(
+                                                    `${result.colorHex}`,
+                                                    0.8,
+                                                ),
+                                            }}
+                                        >
+                                            {resultsRate.colorTotal[
                                                 result.color
-                                            ]["total"]
-                                        }
-                                    </p>
-                                    <p
-                                        className="text-center py-2 px-4 font-bold"
-                                        style={{
-                                            backgroundColor: rgba(
-                                                `${result.colorHex}`,
-                                                0.8,
-                                            ),
-                                        }}
-                                    >
-                                        {resultsRate.colorTotal[result.color][
-                                            "percentage"
-                                        ].toFixed(2)}
-                                        %
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <p
-                                        className="text-center py-2 px-4 col-span-2"
-                                        style={{
-                                            backgroundColor: rgba(
-                                                `${result.colorHex}`,
-                                                0.8,
-                                            ),
-                                        }}
-                                    >
-                                        <span className="opacity-0">.</span>
-                                    </p>
-                                </>
-                            )}
-                        </div>
-                    ))}
+                                            ]["percentage"].toFixed(2)}
+                                            %
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p
+                                            className="text-center py-2 px-4 col-span-2"
+                                            style={{
+                                                backgroundColor: rgba(
+                                                    `${result.colorHex}`,
+                                                    0.8,
+                                                ),
+                                            }}
+                                        >
+                                            <span className="opacity-0">.</span>
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
             </div>
         </Card>
     );

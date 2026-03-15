@@ -39,6 +39,10 @@ function FilterSubmission({
         setSearchField(event.target.value);
     };
 
+    const hasEproxyLink = (shareholder) =>
+        shareholder.api_recipient_contact &&
+        shareholder.api_recipient_completion_date;
+
     const updateFilterSubmission = () => {
         var submissionCopy = [...submission];
 
@@ -50,12 +54,12 @@ function FilterSubmission({
                         .includes(searchField.toLowerCase()) ||
                     value.shareholder.registration
                         .toLowerCase()
-                        .includes(searchField.toLowerCase())
+                        .includes(searchField.toLowerCase()),
             )
             .filter(
                 (value) =>
                     !workerSelect?.length ||
-                    workerSelect.includes(value.user_name)
+                    workerSelect.includes(value.user_name),
             )
             .filter((value) => {
                 return (
@@ -64,6 +68,10 @@ function FilterSubmission({
                 );
             })
             .filter((value) => {
+                if (resultSelect == "eproxy_link") {
+                    return hasEproxyLink(value.shareholder);
+                }
+
                 return (
                     !resultSelect?.length || resultSelect.includes(value.result)
                 );
@@ -76,12 +84,12 @@ function FilterSubmission({
                         parseInt(
                             b.shareholder.shares_total
                                 .replaceAll(",", "")
-                                .replaceAll(".", "")
+                                .replaceAll(".", ""),
                         ) -
                         parseInt(
                             a.shareholder.shares_total
                                 .replaceAll(",", "")
-                                .replaceAll(".", "")
+                                .replaceAll(".", ""),
                         )
                     );
                 } else {
@@ -89,12 +97,12 @@ function FilterSubmission({
                         parseInt(
                             a.shareholder.shares_total
                                 .replaceAll(",", "")
-                                .replaceAll(".", "")
+                                .replaceAll(".", ""),
                         ) -
                         parseInt(
                             b.shareholder.shares_total
                                 .replaceAll(",", "")
-                                .replaceAll(".", "")
+                                .replaceAll(".", ""),
                         )
                     );
                 }

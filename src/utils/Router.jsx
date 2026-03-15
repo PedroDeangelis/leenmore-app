@@ -42,6 +42,7 @@ import SingleActivityData from "../pages/Admin/SingleActivityData";
 import SearchShareholdersApp from "../pages/Worker/SearchShareholdersApp";
 import EmailToWorker from "../pages/Admin/EmailToWorker";
 import SingleEmailToWorker from "../pages/Admin/SingleEmailToWorker";
+import SingleProjectIndex from "../pages/Admin/SingleProject/SingleProjectIndex";
 
 function Router() {
     const { data, isLoading, isFetching } = useUserisLoggendIn();
@@ -80,7 +81,7 @@ function Router() {
                 },
                 {
                     path: "/dashboard/project/:id",
-                    element: <SingleProject />,
+                    element: <SingleProjectIndex />,
                 },
                 {
                     path: "/dashboard/project/:id/add-more-shareholders",

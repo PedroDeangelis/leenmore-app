@@ -451,3 +451,50 @@ export const useMissingShareholdersFromEsignon = (project) => {
         missingShareholders: mutation.data ?? EMPTY_MISSING_SHAREHOLDERS,
     };
 };
+
+// get shareholder eproxy no result
+
+const getShareholderEproxyNoResult = async ({ queryKey }) => {
+    const project_id = queryKey[1];
+
+    if (!project_id) {
+        return [];
+    }
+
+    const { data, error } = await supabase
+        .from("shareholder")
+        .select("*")
+        .eq("project_id", project_id)
+        .or('result.is.null,result.eq.""')
+        .not("api_recipient_contact", "is", null)
+        .not("api_recipient_completion_date", "is", null);
+
+    if (error) {
+        console.error(
+            "Error fetching shareholders with eproxy no result:",
+            error,
+        );
+        return [];
+    }
+
+    return (data || []).filter((shareholder) => {
+        const hasRecipientContact =
+            String(shareholder?.api_recipient_contact ?? "").trim() !== "";
+        const hasCompletionDate =
+            String(shareholder?.api_recipient_completion_date ?? "").trim() !==
+            "";
+
+        return hasRecipientContact && hasCompletionDate;
+    });
+};
+
+export const useShareholderEproxyNoResult = (project_id) => {
+    return useQuery(
+        ["ShareholderEproxyNoResult", project_id],
+        getShareholderEproxyNoResult,
+        {
+            enabled: !!project_id,
+            keepPreviousData: true,
+        },
+    );
+};

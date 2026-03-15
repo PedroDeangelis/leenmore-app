@@ -129,9 +129,19 @@ function SubmissionLoop({ data, projectResults }) {
                     </div>
                     <SubmissionInfo data={data} />
                     {data?.length ? (
-                        data
-                            .slice(0, limitDisplay)
-                            .map((value) => (
+                        data.slice(0, limitDisplay).map((value) => {
+                            // console.log("value.result", value.result);
+
+                            let result = value.result;
+
+                            if (
+                                value.shareholder.api_recipient_contact &&
+                                value.shareholder.api_recipient_completion_date
+                            ) {
+                                result = "eproxy_link";
+                            }
+
+                            return (
                                 <SubmissionLoopItem
                                     handleEditing={handleEditing}
                                     key={value.id}
@@ -153,7 +163,7 @@ function SubmissionLoop({ data, projectResults }) {
                                     user={value.user_name}
                                     date={value.date}
                                     created_at={value.created_at}
-                                    result={value.result}
+                                    result={result}
                                     note={value.note}
                                     files={value.files}
                                     privacyConsentFile={
@@ -163,7 +173,8 @@ function SubmissionLoop({ data, projectResults }) {
                                     shareholderValue={value.shareholder}
                                     setAttachmentPreview={setAttachmentPreview}
                                 />
-                            ))
+                            );
+                        })
                     ) : (
                         <p>{transl("No Submissions")}</p>
                     )}

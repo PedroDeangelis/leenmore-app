@@ -58,7 +58,7 @@ function Debug() {
                 let dobA = registration;
                 let code = registration.substr(6);
 
-                if (registration?.length != 13) {
+                if (registration?.length < 6) {
                     personType = "business";
                     code = registration;
                     dob = registration;

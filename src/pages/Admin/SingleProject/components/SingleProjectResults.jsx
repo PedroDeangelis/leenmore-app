@@ -23,7 +23,12 @@ import { toast } from "react-toastify";
 import ResultsDragnDrog from "./results/ResultsDragnDrog";
 import RealTimeResults from "./RealTimeResults";
 
-function SingleProjectResults({ results, project }) {
+function SingleProjectResults({
+    results,
+    project,
+    projectShareholders,
+    isShareholdersPending,
+}) {
     const [isEdit, setIsEdit] = useState(false);
     const [isOrderning, setIsOrderning] = useState(false);
     const updateProjectMutation = useProjecUpdate();
@@ -60,7 +65,14 @@ function SingleProjectResults({ results, project }) {
     };
     return (
         <div className="grid grid-cols-3 mb-4 gap-4">
-            <RealTimeResults project={project} />
+            {isShareholdersPending ? (
+                <div className="py-8 text-center col-span-2">
+                    <p className="mb-10">{transl("Loading shareholders")}...</p>
+                    <CircularProgress />
+                </div>
+            ) : (
+                <RealTimeResults project={project} />
+            )}
             {isOrderning ? (
                 <ResultsDragnDrog
                     results={results}

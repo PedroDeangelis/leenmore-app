@@ -46,9 +46,9 @@ export default function setShareholderUpdateList(csv) {
         prev_result: getIndex("prevresult", "구 멘트") ?? 14,
         prev_note: getIndex("prevnote", "비고") ?? 15,
         api_recipient_contact:
-            getIndex("apirecipientcontact", "전자위임날짜") ?? 16,
+            getIndex("apirecipientcontact", "전자위임연락처") ?? 16,
         api_recipient_completion_date:
-            getIndex("apirecipientcompletiondate", "전자위임연락처") ?? 17,
+            getIndex("apirecipientcompletiondate", "전자위임날짜") ?? 17,
     };
 
     csv?.forEach((row, key) => {

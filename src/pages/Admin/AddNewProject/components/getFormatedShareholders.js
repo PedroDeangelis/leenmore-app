@@ -48,8 +48,8 @@ export default function getFormatedShareholders(csv) {
         prev_result: getIndex("구 판단") ?? 12,
         prev_comment: getIndex("구 멘트") ?? 13,
         prev_note: getIndex("비고") ?? 14,
-        api_recipient_contact: getIndex("전자위임날짜") ?? 15,
-        api_recipient_completion_date: getIndex("전자위임연락처") ?? 16,
+        api_recipient_contact: getIndex("전자위임연락처") ?? 15,
+        api_recipient_completion_date: getIndex("전자위임날짜") ?? 16,
     };
 
     csv?.forEach((row, key) => {
@@ -108,7 +108,7 @@ export default function getFormatedShareholders(csv) {
         let dobA = registrationClean;
         let code = registrationClean.substr(6);
 
-        if (registrationClean?.length != 13) {
+        if (registrationClean?.length < 6) {
             personType = "business";
             code = registrationClean;
             dob = registrationClean;

@@ -30,7 +30,17 @@ function SubmissionLoopItem({
     setAttachmentPreview,
     privacyConsentFile,
 }) {
-    const chip = result ? JSON.parse(projectResult[result]) : false;
+    let chip = false;
+
+    if (result === "eproxy_link") {
+        chip = {
+            name: transl("eproxy link"),
+            color: "green",
+        };
+    } else {
+        chip = result ? JSON.parse(projectResult[result]) : false;
+    }
+
     const [active, setActive] = useState(false);
     const contentEl = useRef();
 
@@ -119,7 +129,7 @@ function SubmissionLoopItem({
                                     {transl("Create At")}:
                                 </strong>
                                 {moment(created_at).format("YYYY-MM-DD  HH:mm")}
-                                <div className="text-base flex items-center gap-2 justify-center ml-2">
+                                <span className="text-base flex items-center gap-2 justify-center ml-2">
                                     {shareholderValue.eletronic_voting && (
                                         <p className=" text-blue-700 ">
                                             (전자투표 완료)
@@ -131,7 +141,7 @@ function SubmissionLoopItem({
                                                 ({transl("Eproxy completed")})
                                             </p>
                                         )}
-                                </div>
+                                </span>
                             </p>
                         </div>
                         <div>

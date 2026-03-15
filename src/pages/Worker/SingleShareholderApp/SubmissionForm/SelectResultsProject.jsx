@@ -5,7 +5,7 @@ import {
     MenuItem,
     Select,
 } from "@mui/material";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useProject } from "../../../../hooks/useProject";
 import transl from "../../../components/translate";
 
@@ -15,10 +15,28 @@ function SelectResultsProject({
     handleResultChange,
 }) {
     const { data, isLoading } = useProject(project_id);
+    const [results, setResults] = useState([]);
+
+    useEffect(() => {
+        if (data && data.results) {
+            let resultToJson = data.results.map((element) =>
+                JSON.parse(element),
+            );
+
+            // id is the key
+            resultToJson = resultToJson.map((element, index) => {
+                return { ...element, id: index };
+            });
+
+            resultToJson.sort((a, b) => a.order - b.order);
+
+            setResults(resultToJson);
+        }
+    }, [data]);
 
     return (
         <>
-            {isLoading ? (
+            {results.length === 0 ? (
                 <CircularProgress />
             ) : (
                 <>
@@ -30,44 +48,17 @@ function SelectResultsProject({
                         className="w-full py-4 px-2 border border-slate-400 rounded mb-4 bg-transparent"
                         onChange={handleResultChange}
                         value={currentResult}
-                        // defaultValue={currentResult}
                     >
                         <option value="">{transl("Choose an option")}</option>
-                        {data.results.map((element, key) => {
-                            let result = JSON.parse(element);
+                        {results.map((element) => {
                             return (
-                                <option
-                                    key={key}
-                                    value={key}
-                                    // selected={currentResult == key}
-                                >
-                                    {result.name}
+                                <option key={element.id} value={element.id}>
+                                    {element.name}
                                 </option>
                             );
                         })}
                     </select>
                 </>
-                // <FormControl fullWidth className="w-full " sx={{ mb: "20px" }}>
-                //     <InputLabel id="result-select-label">
-                //         {transl("Result")} *
-                //     </InputLabel>
-                //     <Select
-                //         labelId="result-select-label"
-                //         label="Result *"
-                //         value={result}
-                //         onChange={handleResultChange}
-                //     >
-                //         {data.results.map((element, key) => {
-                //             let result = JSON.parse(element);
-
-                //             return (
-                //                 <MenuItem key={key} value={key}>
-                //                     {result.name}
-                //                 </MenuItem>
-                //             );
-                //         })}
-                //     </Select>
-                // </FormControl>
             )}
         </>
     );
