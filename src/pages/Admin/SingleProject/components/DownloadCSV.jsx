@@ -1,8 +1,10 @@
 import { Button, CircularProgress } from "@mui/material";
-import React from "react";
+import React, { useState } from "react";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { toast } from "react-toastify";
 import getDownloadCSV from "./getDownloadCSV";
 import transl from "../../../components/translate";
 import sanitizeFilename from "../../../components/sanitizeFilename";
@@ -11,17 +13,21 @@ import { useMissingShareholdersFromEsignon } from "../../../../hooks/useSharehol
 const MIME_XLSX =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const MAX_SHEET_NAME_LENGTH = 31;
-const MISSING_SHAREHOLDERS_SHEET_NAME = "주주명부 누락";
+const LARGE_EXPORT_ROW_THRESHOLD = 50000;
+const LARGE_EXPORT_CELL_THRESHOLD = 2500000;
+const MISSING_SHAREHOLDERS_SHEET_NAME = "\uC8FC\uC8FC\uBA85\uBD80 \uB204\uB77D";
 const MISSING_SHAREHOLDERS_HEADERS = [
-    "이름",
-    "생년월일",
-    "전자위임시간",
-    "전자위임연락처",
+    "\uC774\uB984",
+    "\uC0DD\uB144\uC6D4\uC77C",
+    "\uC804\uC790\uC704\uC784\uC2DC\uAC04",
+    "\uC804\uC790\uC704\uC784\uC5F0\uB77D\uCC98",
 ];
 
 const sanitizeWorksheetName = (name, fallback) => {
     const safeName = String(name || fallback || "Sheet")
-        .replace(/[\[\]\:\*\?\/\\]/g, "")
+        .replace(/[\\/:*?]/g, "")
+        .replace(/\[/g, "")
+        .replace(/\]/g, "")
         .trim();
 
     return (safeName || fallback || "Sheet").slice(0, MAX_SHEET_NAME_LENGTH);
@@ -34,14 +40,14 @@ const normalizeWorksheetCell = (value) => {
 
     if (Array.isArray(value)) {
         const tempValue = value
-            .map((v) => (typeof v === "string" ? v.trim() : v))
-            .filter((v) => {
-                if (v === null || v === undefined) {
+            .map((item) => (typeof item === "string" ? item.trim() : item))
+            .filter((item) => {
+                if (item === null || item === undefined) {
                     return false;
                 }
 
-                if (typeof v === "string") {
-                    const lowerValue = v.toLowerCase();
+                if (typeof item === "string") {
+                    const lowerValue = item.toLowerCase();
                     return (
                         lowerValue !== "" &&
                         lowerValue !== "null" &&
@@ -52,7 +58,7 @@ const normalizeWorksheetCell = (value) => {
                 return true;
             });
 
-        if (tempValue === null || tempValue.length === 0) {
+        if (tempValue.length === 0) {
             return "";
         }
 
@@ -73,12 +79,12 @@ const normalizeWorksheetCell = (value) => {
         const hasPhoneNumber = tempValue.some(isPhoneLike);
 
         if (hasPhoneNumber) {
-            // remove duplicates while preserving order
             const seen = new Set();
             const uniqueValues = tempValue.filter((item) => {
                 if (seen.has(item)) {
                     return false;
                 }
+
                 seen.add(item);
                 return true;
             });
@@ -96,19 +102,33 @@ const normalizeWorksheetCell = (value) => {
     return value;
 };
 
-const addWorksheet = (workbook, title, headers, rows) => {
-    const worksheet = workbook.addWorksheet(title);
-    worksheet.columns = headers.map((header) => ({
+const buildWorksheetColumns = (headers) =>
+    headers.map((header, index) => ({
         header,
-        key: header,
+        key: `column_${index + 1}`,
         width: Math.max(String(header).length + 4, 18),
     }));
 
-    const headerRow = worksheet.getRow(1);
-    headerRow.font = { bold: true };
-    headerRow.alignment = { horizontal: "center", vertical: "middle" };
+const addWorksheet = (
+    workbook,
+    title,
+    headers,
+    forEachRow,
+    { optimizeForLargeExport = false } = {},
+) => {
+    const worksheet = workbook.addWorksheet(title);
 
-    rows.forEach((row) => {
+    if (optimizeForLargeExport) {
+        worksheet.addRow(headers.map(normalizeWorksheetCell));
+    } else {
+        worksheet.columns = buildWorksheetColumns(headers);
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.alignment = { horizontal: "center", vertical: "middle" };
+    }
+
+    forEachRow((row) => {
         worksheet.addRow(row.map(normalizeWorksheetCell));
     });
 
@@ -128,65 +148,185 @@ const formatMissingShareholderRow = (shareholder) => {
     ];
 };
 
+const createMissingShareholderIterator = (missingShareholders) => (callback) => {
+    (missingShareholders || []).forEach((shareholder) => {
+        callback(formatMissingShareholderRow(shareholder));
+    });
+};
+
+const formatCSVCell = (value) => {
+    const normalizedValue = String(normalizeWorksheetCell(value) ?? "");
+
+    if (/[",\r\n]/.test(normalizedValue)) {
+        return `"${normalizedValue.replace(/"/g, '""')}"`;
+    }
+
+    return normalizedValue;
+};
+
+const createCSVContent = (headers, forEachRow) => {
+    const lines = [headers.map(formatCSVCell).join(",")];
+
+    forEachRow((row) => {
+        lines.push(row.map(formatCSVCell).join(","));
+    });
+
+    return `\uFEFF${lines.join("\r\n")}`;
+};
+
+const shouldOptimizeWorkbook = (downloadData) =>
+    downloadData.rowCount >= LARGE_EXPORT_ROW_THRESHOLD ||
+    downloadData.estimatedCellCount >= LARGE_EXPORT_CELL_THRESHOLD;
+
+const saveWorkbookExport = async ({
+    project,
+    downloadData,
+    missingShareholders,
+    optimizeForLargeExport,
+}) => {
+    const workbook = new ExcelJS.Workbook();
+    const projectSheetTitle = sanitizeWorksheetName(project?.title, "Project");
+    const missingSheetTitle = sanitizeWorksheetName(
+        MISSING_SHAREHOLDERS_SHEET_NAME,
+        "Missing Shareholders",
+    );
+
+    addWorksheet(
+        workbook,
+        projectSheetTitle,
+        downloadData.header,
+        downloadData.forEachRow,
+        { optimizeForLargeExport },
+    );
+
+    if (missingShareholders.length > 0) {
+        addWorksheet(
+            workbook,
+            missingSheetTitle,
+            MISSING_SHAREHOLDERS_HEADERS,
+            createMissingShareholderIterator(missingShareholders),
+            { optimizeForLargeExport },
+        );
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer(
+        optimizeForLargeExport
+            ? {
+                  useSharedStrings: false,
+                  useStyles: false,
+              }
+            : undefined,
+    );
+    const filename = sanitizeFilename(project?.title || "project-data");
+
+    saveAs(new Blob([buffer], { type: MIME_XLSX }), `${filename}.xlsx`);
+};
+
+const saveZipFallback = async ({ project, downloadData, missingShareholders }) => {
+    const zip = new JSZip();
+    const filename = sanitizeFilename(project?.title || "project-data");
+    const projectSheetTitle = sanitizeFilename(
+        sanitizeWorksheetName(project?.title, "Project"),
+    );
+    const missingSheetTitle = sanitizeFilename(
+        sanitizeWorksheetName(
+            MISSING_SHAREHOLDERS_SHEET_NAME,
+            "Missing Shareholders",
+        ),
+    );
+
+    zip.file(
+        `${projectSheetTitle || "project"}.csv`,
+        createCSVContent(downloadData.header, downloadData.forEachRow),
+    );
+
+    if (missingShareholders.length > 0) {
+        zip.file(
+            `${missingSheetTitle || "missing-shareholders"}.csv`,
+            createCSVContent(
+                MISSING_SHAREHOLDERS_HEADERS,
+                createMissingShareholderIterator(missingShareholders),
+            ),
+        );
+    }
+
+    const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+    });
+
+    saveAs(zipBlob, `${filename}.zip`);
+};
+
 function DownloadCSV({ project, projectShareholders }) {
-    const { isLoading, mutateAsync: fetchMissingShareholders } =
-        useMissingShareholdersFromEsignon(project);
-    const downloadData = project
-        ? getDownloadCSV({ project, projectShareholders })
-        : null;
+    const [isExporting, setIsExporting] = useState(false);
+    const {
+        isLoading: isMissingShareholdersLoading,
+        mutateAsync: fetchMissingShareholders,
+    } = useMissingShareholdersFromEsignon(project);
 
     const handleDownload = async () => {
-        if (!project || !downloadData) {
+        if (!project) {
             return;
         }
 
-        let missingShareholders = [];
-        if (project.link_manage_id) {
-            try {
-                missingShareholders = await fetchMissingShareholders(project);
-            } catch (error) {
-                console.error("Failed to fetch missing shareholders:", error);
+        setIsExporting(true);
+
+        try {
+            let missingShareholders = [];
+
+            if (project.link_manage_id) {
+                try {
+                    missingShareholders = await fetchMissingShareholders(project);
+                } catch (error) {
+                    console.error("Failed to fetch missing shareholders:", error);
+                }
             }
+
+            const downloadData = getDownloadCSV({ project, projectShareholders });
+            const optimizeForLargeExport = shouldOptimizeWorkbook(downloadData);
+
+            try {
+                await saveWorkbookExport({
+                    project,
+                    downloadData,
+                    missingShareholders,
+                    optimizeForLargeExport,
+                });
+            } catch (error) {
+                console.error("Failed to create xlsx project export:", error);
+
+                await saveZipFallback({
+                    project,
+                    downloadData,
+                    missingShareholders,
+                });
+
+                toast.warn(
+                    "Excel export was too large for the browser, so the data was downloaded as a ZIP.",
+                );
+            }
+        } catch (error) {
+            console.error("Failed to download project data:", error);
+            toast.error("Project export failed.");
+        } finally {
+            setIsExporting(false);
         }
-
-        const workbook = new ExcelJS.Workbook();
-
-        addWorksheet(
-            workbook,
-            sanitizeWorksheetName(project.title, "Project"),
-            downloadData.header,
-            downloadData.body,
-        );
-
-        if (missingShareholders && missingShareholders.length > 0) {
-            addWorksheet(
-                workbook,
-                sanitizeWorksheetName(
-                    MISSING_SHAREHOLDERS_SHEET_NAME,
-                    "Missing Shareholders",
-                ),
-                MISSING_SHAREHOLDERS_HEADERS,
-                (missingShareholders || []).map(formatMissingShareholderRow),
-            );
-        }
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const filename = sanitizeFilename(project.title || "project-data");
-
-        saveAs(new Blob([buffer], { type: MIME_XLSX }), `${filename}.xlsx`);
     };
 
+    if (!project) {
+        return null;
+    }
+
+    if (isMissingShareholdersLoading || isExporting) {
+        return <CircularProgress />;
+    }
+
     return (
-        <>
-            {!downloadData || isLoading ? (
-                <CircularProgress />
-            ) : (
-                <Button onClick={handleDownload}>
-                    <FileDownloadIcon />
-                    {transl("Download CSV Data")}
-                </Button>
-            )}
-        </>
+        <Button onClick={handleDownload} disabled={isMissingShareholdersLoading}>
+            <FileDownloadIcon />
+            {transl("Download CSV Data")}
+        </Button>
     );
 }
 

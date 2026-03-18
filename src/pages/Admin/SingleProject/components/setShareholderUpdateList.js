@@ -67,6 +67,7 @@ export default function setShareholderUpdateList(csv) {
             registration: indexes.registration
                 ? row[indexes.registration]
                 : undefined,
+            sex: row[indexes.sex],
             shares: row[indexes.shares],
             shares_total: row[indexes.shares_total],
             eletronic_voting: row[indexes.eletronic_voting],

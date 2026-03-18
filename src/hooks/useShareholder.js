@@ -334,31 +334,40 @@ export const useShareholderLastResultUpdate = () => {
     );
 };
 
+const getProjectIdsByShareholderUser = async (user) => {
+    const { data, error } = await supabase
+        .from("shareholder")
+        .select("project_id, project!inner(id, status)")
+        .contains("user", [user])
+        .in("project.status", ["publish", "draft"]);
+
+    if (error) throw error;
+
+    return [...new Set((data || []).map((row) => row.project_id))];
+};
+
+const mapShareholdersWithProject = (shareholders = []) => {
+    return shareholders.map((shareholder) => ({
+        ...shareholder,
+        project_id: shareholder.project?.id ?? shareholder.project_id,
+        project_title: shareholder.project?.title,
+        project_results: shareholder.project?.results,
+    }));
+};
+
 // useAllShareholdersByUser
 const getAllShareholdersByUser = async ({ queryKey }) => {
     const user = queryKey[1];
-    if (!user) return false;
+    if (!user) return [];
 
-    // 1) Get publish or draft project IDs where at least one shareholder has this user
-    const { data: projects, error: pErr } = await supabase
-        .from("project")
-        .select(`id, shareholder!inner(id)`) // inner join ensures project must have matching shareholder
-        .in("status", ["publish", "draft"])
-        .contains("shareholder.user", [user]);
+    try {
+        const projectIds = await getProjectIdsByShareholderUser(user);
+        if (!projectIds.length) return [];
 
-    if (pErr) {
-        console.error("Project id query error:", pErr);
-        return false;
-    }
-
-    const projectIds = [...new Set((projects || []).map((p) => p.id))];
-    if (!projectIds.length) return [];
-
-    // 2) Get ALL shareholders for those projects (no user filter here)
-    const { data: shareholders, error: sErr } = await supabase
-        .from("shareholder")
-        .select(
-            `
+        const { data: shareholders, error } = await supabase
+            .from("shareholder")
+            .select(
+                `
       *,
       project:project_id (
         id,
@@ -366,26 +375,87 @@ const getAllShareholdersByUser = async ({ queryKey }) => {
         results
       )
     `,
-        )
-        .in("project_id", projectIds)
-        .order("id", { ascending: false });
+            )
+            .in("project_id", projectIds)
+            .order("id", { ascending: false });
 
-    if (sErr) {
-        console.error("Shareholder query error:", sErr);
-        return false;
+        if (error) {
+            throw error;
+        }
+
+        return mapShareholdersWithProject(shareholders || []);
+    } catch (error) {
+        console.error("Shareholder query error:", error);
+        return [];
     }
-
-    // flatten project fields like you were doing
-    return (shareholders || []).map((s) => ({
-        ...s,
-        project_id: s.project?.id ?? s.project_id,
-        project_title: s.project?.title,
-        project_results: s.project?.results,
-    }));
 };
 
 export const useAllShareholdersByUser = (user) => {
     return useQuery(["AllShareholdersByUser", user], getAllShareholdersByUser);
+};
+
+const getShareholderSearchByUser = async ({ queryKey }) => {
+    const user = queryKey[1];
+    const search = String(queryKey[2] ?? "").trim();
+    if (!user || !search) return [];
+
+    const searchTerm = search
+        .replace(/[%_\\]/g, "\\$&")
+        .replace(/[(),]/g, " ")
+        .trim();
+
+    // Step 1: Get project IDs where this user appears in ANY shareholder's user array
+    const { data: userProjects, error: projectError } = await supabase
+        .from("shareholder")
+        .select("project_id")
+        .contains("user", [user]); // GIN index hit — fast
+
+    if (projectError) throw projectError;
+
+    const projectIds = [
+        ...new Set((userProjects || []).map((r) => r.project_id)),
+    ];
+    if (!projectIds.length) return [];
+
+    // Step 2: Search ALL shareholders in those projects
+    const { data: shareholders, error } = await supabase
+        .from("shareholder")
+        .select(
+            `
+            *,
+            project:project_id (
+                id,
+                title,
+                results,
+                status
+            )
+        `,
+        )
+        .in("project_id", projectIds) // btree index hit
+        .in("project.status", ["publish", "draft"])
+        .or(
+            `registration.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%,contact_worker.ilike.%${searchTerm}%`,
+        )
+        .order("id", { ascending: false })
+        .limit(10);
+
+    if (error) throw error;
+
+    return mapShareholdersWithProject(
+        (shareholders || []).filter((s) => s.project !== null),
+    );
+};
+
+export const useShareholderSearchByUser = (user, search) => {
+    const normalizedSearch = String(search ?? "").trim();
+
+    return useQuery(
+        ["ShareholderSearchByUser", user, normalizedSearch],
+        getShareholderSearchByUser,
+        {
+            enabled: !!user && !!normalizedSearch,
+        },
+    );
 };
 
 // getMissingShareholdersFromEsignon

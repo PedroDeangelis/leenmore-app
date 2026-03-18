@@ -1,10 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
-import transl from "../../components/translate";
-import AppContent from "../components/AppContent";
-import AppHeader from "../components/AppHeader";
+import React, { useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
-
 import {
+    Button,
     Card,
     CardContent,
     CircularProgress,
@@ -13,74 +10,178 @@ import {
     InputLabel,
     OutlinedInput,
 } from "@mui/material";
-
+import { useShareholderSearchByUser } from "../../../hooks/useShareholder";
 import { useUser, useUserisLoggendIn } from "../../../hooks/useUser";
-import { useAllShareholdersByUser } from "../../../hooks/useShareholder";
-import ShareholderInfo from "../SingleShareholderApp/components/ShareholderInfo";
+import transl from "../../components/translate";
+import AppContent from "../components/AppContent";
+import AppHeader from "../components/AppHeader";
 import getShareholderSex from "../components/getShareholderSex";
 import OChip from "../../components/OChip";
 
+function ShareholderSearchResult({ shareholder }) {
+    let resultJson =
+        shareholder.project_results?.[shareholder.result] ?? null;
+
+    if (typeof resultJson === "string") {
+        try {
+            resultJson = JSON.parse(resultJson);
+        } catch (error) {
+            resultJson = null;
+        }
+    } else if (resultJson && typeof resultJson !== "object") {
+        resultJson = null;
+    }
+
+    return (
+        <Card sx={{ marginBottom: "14px" }}>
+            <CardContent className="relative">
+                <div className="md:absolute md:top-5 left-0 w-full mb-1 text-center text-base flex items-center gap-2 justify-center">
+                    {shareholder.eletronic_voting && (
+                        <p className="text-blue-700">
+                            ({transl("eletronic vote")} {transl("completed")})
+                        </p>
+                    )}
+                    {shareholder.api_recipient_contact &&
+                        shareholder.api_recipient_completion_date && (
+                            <p className="text-green-700">
+                                ({transl("Eproxy completed")})
+                            </p>
+                        )}
+                </div>
+                <div className="flex items-center justify-between">
+                    <p className="font-bold">
+                        {shareholder.name}
+                        <span className="text-slate-500 font-normal mx-2">
+                            {shareholder.date_of_birth_code}
+                        </span>
+                        {getShareholderSex(shareholder.sex)}
+                    </p>
+                    <div>
+                        {resultJson && (
+                            <OChip color={resultJson.color}>
+                                {resultJson.name}
+                            </OChip>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                    <p className="text-center">
+                        <span className="text-xs block text-slate-500">
+                            {transl("Shares")}
+                        </span>
+                        {shareholder.shares}
+                    </p>
+                    <p className="text-center">
+                        <span className="text-xs block text-slate-500">
+                            {transl("Total Shares")}
+                        </span>
+                        {shareholder.shares_total}
+                    </p>
+                </div>
+                {shareholder.contact_info && (
+                    <p className="mt-4">
+                        <span className="text-xs block text-slate-500">
+                            {transl("Contact info")}
+                        </span>
+                        {shareholder.contact_info}
+                    </p>
+                )}
+                <div className="grid grid-cols-2 gap-10 mt-4">
+                    <div>
+                        {shareholder.contact_worker && (
+                            <p>
+                                <span className="text-xs block text-slate-500">
+                                    {transl("Contact for worker")}
+                                </span>
+                                {shareholder.contact_worker}
+                            </p>
+                        )}
+                        {shareholder.address && (
+                            <p className="mt-4">
+                                <span className="text-xs block text-slate-500">
+                                    {transl("Address")}
+                                </span>
+                                {shareholder.address}
+                            </p>
+                        )}
+                    </div>
+                    <div className="text-right">
+                        <p>
+                            <span className="text-xs block text-slate-500">
+                                {transl("Company")}
+                            </span>
+                            {shareholder.project_title}
+                        </p>
+                        <p className="mt-2">
+                            <span className="text-xs block text-slate-500">
+                                {transl("Worker(s)")}
+                            </span>
+                            {shareholder.user?.[0]?.length
+                                ? shareholder.user.join(" / ")
+                                : transl("vacant")}
+                        </p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function SearchShareholdersApp() {
     const [searchField, setSearchField] = useState("");
+    const [submittedSearch, setSubmittedSearch] = useState("");
 
     const { data: currentUser } = useUserisLoggendIn();
     const { data: usermeta } = useUser(currentUser?.id);
 
-    // important: usermeta may be undefined on first render
     const userFirstName = usermeta?.first_name;
+    const trimmedSearchField = searchField.trim();
 
-    // default shareholders to [] so filtering never breaks
-    const { data: shareholders = [], isLoading } =
-        useAllShareholdersByUser(userFirstName);
+    const {
+        data: shareholders = [],
+        isLoading,
+        refetch,
+    } = useShareholderSearchByUser(userFirstName, submittedSearch);
 
-    const query = searchField.trim().toLowerCase();
+    const handleSearchSubmit = (event) => {
+        event.preventDefault();
 
-    // filter by registration, name, contact_worker
-    const filteredShareholders = useMemo(() => {
-        if (!query) return [];
+        if (!trimmedSearchField) {
+            setSubmittedSearch("");
+            return;
+        }
 
-        return shareholders
-            .filter((s) => {
-                const registration = String(s.registration ?? "").toLowerCase();
-                const name = String(s.name ?? "").toLowerCase();
-                const contactWorker = String(
-                    s.contact_worker ?? "",
-                ).toLowerCase();
+        if (trimmedSearchField === submittedSearch) {
+            refetch();
+            return;
+        }
 
-                return (
-                    registration.includes(query) ||
-                    name.includes(query) ||
-                    contactWorker.includes(query)
-                );
-            })
-            .slice(0, 10);
-    }, [shareholders, query]);
+        setSubmittedSearch(trimmedSearchField);
+    };
 
-    const showTypingHint = !query;
-    const showNoResults = query && filteredShareholders.length === 0;
-    const showResults = query && filteredShareholders.length > 0;
+    const hasSubmittedSearch = submittedSearch.length > 0;
+    const showTypingHint = !hasSubmittedSearch;
+    const showNoResults =
+        hasSubmittedSearch && !isLoading && shareholders.length === 0;
+    const showResults =
+        hasSubmittedSearch && !isLoading && shareholders.length > 0;
 
     return (
         <div>
             <AppHeader>
                 <div>
                     <p className="text-xs mb-3">{transl("page")}</p>
-                    <h1 className="text-3xl">주주 검색하기</h1>
+                    <h1 className="text-3xl">
+                        {transl("search shareholders")}
+                    </h1>
                 </div>
             </AppHeader>
 
             <AppContent>
-                {isLoading ? (
-                    <div className="text-center">
-                        <CircularProgress />
-                    </div>
-                ) : (
-                    <div>
-                        <Card sx={{ padding: 1 }}>
-                            <FormControl
-                                variant="outlined"
-                                sx={{ width: "100%" }}
-                            >
+                <div>
+                    <Card sx={{ padding: 1 }}>
+                        <form onSubmit={handleSearchSubmit}>
+                            <FormControl variant="outlined" sx={{ width: "100%" }}>
                                 <InputLabel htmlFor="outlined-adornment-search">
                                     {transl("Search for shareholders")}...
                                 </InputLabel>
@@ -93,189 +194,52 @@ function SearchShareholdersApp() {
                                     }
                                     label={`${transl("Search for shareholders")}...`}
                                     value={searchField}
-                                    onChange={(e) =>
-                                        setSearchField(e.target.value)
+                                    onChange={(event) =>
+                                        setSearchField(event.target.value)
                                     }
                                 />
                             </FormControl>
-                        </Card>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                fullWidth
+                                sx={{ marginTop: 2 }}
+                                disabled={!trimmedSearchField || !userFirstName}
+                            >
+                                {transl("Search")}
+                            </Button>
+                        </form>
+                    </Card>
 
-                        {/* Hint / Empty / Results */}
-                        {showTypingHint && (
-                            <div className="text-center text-gray-500 mt-4">
-                                {transl("Type to search")}
-                            </div>
-                        )}
+                    {showTypingHint && (
+                        <div className="text-center text-gray-500 mt-4">
+                            {transl("Type to search")}
+                        </div>
+                    )}
 
-                        {showNoResults && (
-                            <div className="text-center text-gray-500 mt-4">
-                                {transl("No shareholders found")}
-                            </div>
-                        )}
+                    {isLoading && (
+                        <div className="text-center mt-4">
+                            <CircularProgress />
+                        </div>
+                    )}
 
-                        {showResults && (
-                            <div className="mt-2">
-                                {filteredShareholders.map((shareholder) => {
-                                    let resultJson =
-                                        shareholder.project_results?.[
-                                            shareholder.result
-                                        ] ?? null;
+                    {showNoResults && (
+                        <div className="text-center text-gray-500 mt-4">
+                            {transl("No shareholders found")}
+                        </div>
+                    )}
 
-                                    if (typeof resultJson === "string") {
-                                        try {
-                                            // convert string to json
-                                            resultJson = JSON.parse(resultJson);
-                                        } catch (error) {
-                                            resultJson = null;
-                                        }
-                                    } else if (
-                                        resultJson &&
-                                        typeof resultJson !== "object"
-                                    ) {
-                                        resultJson = null;
-                                    }
-
-                                    return (
-                                        <Card
-                                            key={shareholder.id}
-                                            sx={{ marginBottom: "14px" }}
-                                        >
-                                            <CardContent className="relative">
-                                                <div className="md:absolute md:top-5 left-0 w-full  mb-1 text-center  text-base flex items-center gap-2 justify-center">
-                                                    {shareholder.eletronic_voting && (
-                                                        <p className=" text-blue-700 ">
-                                                            (전자투표 완료)
-                                                        </p>
-                                                    )}
-                                                    {shareholder.api_recipient_contact &&
-                                                        shareholder.api_recipient_completion_date && (
-                                                            <p className=" text-green-700 ">
-                                                                (
-                                                                {transl(
-                                                                    "Eproxy completed",
-                                                                )}
-                                                                )
-                                                            </p>
-                                                        )}
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <p className="font-bold">
-                                                        {shareholder.name}
-                                                        <span className="text-slate-500 font-normal mx-2">
-                                                            {
-                                                                shareholder.date_of_birth_code
-                                                            }
-                                                        </span>
-                                                        {getShareholderSex(
-                                                            shareholder.sex,
-                                                        )}
-                                                    </p>
-                                                    <div>
-                                                        {resultJson && (
-                                                            <OChip
-                                                                color={
-                                                                    resultJson.color
-                                                                }
-                                                            >
-                                                                {
-                                                                    resultJson.name
-                                                                }
-                                                            </OChip>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between mt-4">
-                                                    <p className="text-center">
-                                                        <span className="text-xs block text-slate-500">
-                                                            {transl("Shares")}
-                                                        </span>
-                                                        {shareholder.shares}
-                                                    </p>
-                                                    <p className="text-center">
-                                                        <span className="text-xs block text-slate-500">
-                                                            {transl(
-                                                                "Total Shares",
-                                                            )}
-                                                        </span>
-                                                        {
-                                                            shareholder.shares_total
-                                                        }
-                                                    </p>
-                                                </div>
-                                                {shareholder.contact_info && (
-                                                    <p className=" mt-4">
-                                                        <span className="text-xs block text-slate-500">
-                                                            {transl(
-                                                                "Contact info",
-                                                            )}
-                                                        </span>
-                                                        {
-                                                            shareholder.contact_info
-                                                        }
-                                                    </p>
-                                                )}
-                                                <div className="grid grid-cols-2 gap-10 mt-4">
-                                                    <div>
-                                                        {shareholder.contact_worker && (
-                                                            <p className="">
-                                                                <span className="text-xs block text-slate-500">
-                                                                    {transl(
-                                                                        "Contact for worker",
-                                                                    )}
-                                                                </span>
-                                                                {
-                                                                    shareholder.contact_worker
-                                                                }
-                                                            </p>
-                                                        )}
-                                                        {shareholder.address && (
-                                                            <>
-                                                                <p className=" mt-4">
-                                                                    <span className="text-xs block text-slate-500">
-                                                                        {transl(
-                                                                            "Address",
-                                                                        )}
-                                                                    </span>
-                                                                    {
-                                                                        shareholder.address
-                                                                    }
-                                                                </p>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p>
-                                                            <span className="text-xs block text-slate-500">
-                                                                해당 회사
-                                                            </span>
-                                                            {
-                                                                shareholder.project_title
-                                                            }
-                                                        </p>
-                                                        <p className="mt-2">
-                                                            <span className="text-xs block text-slate-500">
-                                                                배정 담당자
-                                                            </span>
-                                                            {shareholder
-                                                                .user?.[0]
-                                                                ?.length
-                                                                ? shareholder.user.join(
-                                                                      " / ",
-                                                                  )
-                                                                : transl(
-                                                                      "vacant",
-                                                                  )}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
+                    {showResults && (
+                        <div className="mt-2">
+                            {shareholders.map((shareholder) => (
+                                <ShareholderSearchResult
+                                    key={shareholder.id}
+                                    shareholder={shareholder}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </AppContent>
         </div>
     );
