@@ -1,11 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
-import {
-    useShareholderAndSubmissionUpdate,
-    useShareholderUpdate,
-} from "../../../../hooks/useShareholder";
 import transl from "../../../components/translate";
-import EditShareholderResultDialog from "../../SingleProject/components/EditShareholderResultDialog";
+import SubmissionLoopEsignonItem from "./SubmissionLoopEsignonItem";
 import SubmissionLoopItem from "./SubmissionLoopItem";
 import SubmissionInfo from "./SubmissionInfo";
 import ReceiptAttachmentPreview from "../../ReceiptsByProjectAndUser/components/ReceiptAttachmentPreview";
@@ -13,92 +8,30 @@ import ReceiptAttachmentPreview from "../../ReceiptsByProjectAndUser/components/
 const headerTH = "py-6 text-sm tracking-wider text-gray-500";
 
 function SubmissionLoop({ data, projectResults }) {
-    const [openDialog, setOpenDialog] = useState(false);
-    const [openEditDialog, setOpenEditDialog] = useState(false);
-    const [editDialogShareholder, setEditDialogShareholder] = useState(false);
-    const [editDialogSubmission, setEditDialogSubmission] = useState(false);
     const [limitDisplay, setLimitDisplay] = useState(20);
     const lastSubmissionRef = useRef();
-    const updateShaholdersAndSubmissionMutation =
-        useShareholderAndSubmissionUpdate();
-
     const [attachmentPreview, setAttachmentPreview] = useState(null);
 
-    const handleOpenDialog = () => {
-        setOpenDialog(true);
-    };
-
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
-    };
-
-    const handleEditing = (shareholder, submissionID) => {
-        setOpenEditDialog(true);
-        setEditDialogShareholder(shareholder);
-        setEditDialogSubmission(submissionID);
-    };
-
-    const handleCloseEditing = () => {
-        setOpenEditDialog(false);
-        setEditDialogShareholder(false);
-    };
-
-    const handleResultUpdate = (shareholder, result, submissionID) => {
-        updateShaholdersAndSubmissionMutation.mutate(
-            {
-                shareholderID: shareholder.id,
-                submissionID: submissionID,
-                result: result,
-            },
-            {
-                onSuccess: (error) => {
-                    if (error) {
-                        toast.error(
-                            "Something went wrong! Check your excel please.",
-                            {
-                                position: "top-right",
-                                autoClose: 4000,
-                                hideProgressBar: false,
-                                closeOnClick: true,
-                                pauseOnHover: true,
-                                draggable: true,
-                                progress: undefined,
-                            },
-                        );
-                    } else {
-                        toast.success(
-                            transl("The Shareholder result is updated"),
-                            {
-                                position: "top-right",
-                                autoClose: 4000,
-                                hideProgressBar: false,
-                                closeOnClick: true,
-                                pauseOnHover: true,
-                                draggable: true,
-                                progress: undefined,
-                            },
-                        );
-                    }
-                    handleCloseEditing();
-                },
-            },
-        );
-    };
-
-    const observer = new IntersectionObserver(
-        (entries) => {
-            if (entries[0].isIntersecting) {
-                setLimitDisplay((prev) => prev + 20);
-            }
-        },
-        { threshold: 1 },
-    );
-
     useEffect(() => {
-        if (lastSubmissionRef.current) {
-            observer.observe(lastSubmissionRef.current);
+        if (!lastSubmissionRef.current) {
+            return undefined;
         }
-    }, [lastSubmissionRef]);
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setLimitDisplay((prev) => prev + 20);
+                }
+            },
+            { threshold: 1 },
+        );
+
+        observer.observe(lastSubmissionRef.current);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
 
     return (
         <>
@@ -130,20 +63,21 @@ function SubmissionLoop({ data, projectResults }) {
                     <SubmissionInfo data={data} />
                     {data?.length ? (
                         data.slice(0, limitDisplay).map((value) => {
-                            // console.log("value.result", value.result);
-
                             let result = value.result;
 
-                            if (
-                                value.shareholder.api_recipient_contact &&
-                                value.shareholder.api_recipient_completion_date
-                            ) {
-                                result = "eproxy_link";
+                            if (value?.source === "esignon") {
+                                return (
+                                    <SubmissionLoopEsignonItem
+                                        key={value.id}
+                                        project={value.project?.title}
+                                        created_at={value.created_at}
+                                        shareholderValue={value.shareholder}
+                                    />
+                                );
                             }
 
                             return (
                                 <SubmissionLoopItem
-                                    handleEditing={handleEditing}
                                     key={value.id}
                                     submissionID={value.id}
                                     project={value.project.title}
@@ -186,14 +120,6 @@ function SubmissionLoop({ data, projectResults }) {
                 />
             </div>
             <div ref={lastSubmissionRef}></div>
-            {/* <EditShareholderResultDialog
-                shareholder={editDialogShareholder}
-                handleCloseEditing={handleCloseEditing}
-                open={openEditDialog}
-                results={projectResults}
-                handleResultUpdate={handleResultUpdate}
-                submissionID={editDialogSubmission}
-            /> */}
         </>
     );
 }

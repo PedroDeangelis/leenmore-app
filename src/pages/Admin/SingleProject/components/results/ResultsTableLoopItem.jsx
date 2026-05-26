@@ -32,6 +32,7 @@ function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
 				color: colorSelect,
 				contactRequired: contactRequired,
 				attachmentRequired: attachmentRequired,
+				order: result?.order,
 			});
 			return newResults;
 		});

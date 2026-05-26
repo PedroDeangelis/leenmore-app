@@ -5,12 +5,31 @@ import {
     OutlinedInput,
     Paper,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import transl from "../../../components/translate";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterSubmissionFiltering from "./FilterSubmissionFiltering";
 import FilterSubmissionSorting from "./FilterSubmissionSorting";
 import moment from "moment";
+
+const getSubmissionDateOnly = (value) => {
+    const normalizedDate = String(value ?? "")
+        .split("T")[0]
+        .trim();
+
+    if (!normalizedDate) {
+        return moment.invalid();
+    }
+
+    const strictDate = moment(normalizedDate, "YYYY-MM-DD", true);
+
+    return strictDate.isValid() ? strictDate : moment(value).startOf("day");
+};
+
+const normalizeSubmissionDate = (value) =>
+    String(value ?? "")
+        .split("T")[0]
+        .trim();
 
 function FilterSubmission({
     submission,
@@ -33,18 +52,14 @@ function FilterSubmission({
         if (result) {
             setResultSelect([result]);
         }
-    }, []);
+    }, [result]);
 
     const handleSearchChange = (event) => {
         setSearchField(event.target.value);
     };
 
-    const hasEproxyLink = (shareholder) =>
-        shareholder.api_recipient_contact &&
-        shareholder.api_recipient_completion_date;
-
-    const updateFilterSubmission = () => {
-        var submissionCopy = [...submission];
+    const updateFilterSubmission = useCallback(() => {
+        var submissionCopy = Array.isArray(submission) ? [...submission] : [];
 
         submissionCopy = submissionCopy
             .filter(
@@ -56,22 +71,27 @@ function FilterSubmission({
                         .toLowerCase()
                         .includes(searchField.toLowerCase()),
             )
-            .filter(
-                (value) =>
-                    !workerSelect?.length ||
-                    workerSelect.includes(value.user_name),
-            )
             .filter((value) => {
+                const workerNames =
+                    Array.isArray(value.worker_names) &&
+                    value.worker_names.length
+                        ? value.worker_names
+                        : value.user_name
+                          ? [value.user_name]
+                          : [];
+
                 return (
-                    !dateSelect?.length ||
-                    dateSelect.includes(value.date.split("T")[0])
+                    !workerSelect?.length ||
+                    workerNames.some((worker) => workerSelect.includes(worker))
                 );
             })
             .filter((value) => {
-                if (resultSelect == "eproxy_link") {
-                    return hasEproxyLink(value.shareholder);
-                }
-
+                return (
+                    !dateSelect?.length ||
+                    dateSelect.includes(normalizeSubmissionDate(value.date))
+                );
+            })
+            .filter((value) => {
                 return (
                     !resultSelect?.length || resultSelect.includes(value.result)
                 );
@@ -111,17 +131,8 @@ function FilterSubmission({
 
         if (dateSort) {
             submissionCopy.sort((a, b) => {
-                var dateA = moment(a.date);
-                var created_at_A = moment(a.created_at);
-                dateA
-                    .add(created_at_A.get("hour"), "hours")
-                    .add(created_at_A.get("minute"), "minutes");
-
-                var dateB = moment(b.date);
-                var created_at_B = moment(b.created_at);
-                dateB
-                    .add(created_at_B.get("hour"), "hours")
-                    .add(created_at_B.get("minute"), "minutes");
+                var dateA = getSubmissionDateOnly(a.date);
+                var dateB = getSubmissionDateOnly(b.date);
 
                 if (dateSort === "asc") {
                     return dateA.diff(dateB); // For ascending order
@@ -136,7 +147,7 @@ function FilterSubmission({
             submissionCopy = submissionCopy.filter((value) => {
                 if (
                     shareholders.includes(value.shareholder.id) ||
-                    value.result != value.shareholder.result
+                    value.result !== value.shareholder.result
                 ) {
                     return false;
                 }
@@ -147,19 +158,21 @@ function FilterSubmission({
         }
 
         setFilteredSubmission([...submissionCopy]);
-    };
+    }, [
+        dateSelect,
+        dateSort,
+        resultSelect,
+        searchField,
+        setFilteredSubmission,
+        sharesTotalSort,
+        showOnlyTheLastSubmission,
+        submission,
+        workerSelect,
+    ]);
 
     useEffect(() => {
         updateFilterSubmission();
-    }, [
-        searchField,
-        workerSelect,
-        dateSelect,
-        resultSelect,
-        sharesTotalSort,
-        dateSort,
-        showOnlyTheLastSubmission,
-    ]);
+    }, [updateFilterSubmission]);
 
     return (
         <div className="max-w-5xl mx-auto">

@@ -8,6 +8,11 @@ import {
 import React, { useEffect, useState } from "react";
 import transl from "../../../components/translate";
 
+const normalizeSubmissionDate = (value) =>
+    String(value ?? "")
+        .split("T")[0]
+        .trim();
+
 function FilterSubmissionFiltering({
     submission,
     workerSelect,
@@ -54,13 +59,24 @@ function FilterSubmissionFiltering({
 
     useEffect(() => {
         if (submission) {
-            const temp_workers = submission.map((item) => item.user_name);
+            const temp_workers = submission.flatMap((item) => {
+                if (
+                    Array.isArray(item.worker_names) &&
+                    item.worker_names.length
+                ) {
+                    return item.worker_names;
+                }
+
+                return item.user_name ? [item.user_name] : [];
+            });
             const uniqueWorkers = [...new Set(temp_workers)];
             setWorkers(uniqueWorkers);
 
-            const temp_dates = submission.map((item) => item.date);
+            const temp_dates = submission
+                .map((item) => normalizeSubmissionDate(item.date))
+                .filter(Boolean);
             const uniqueDates = [...new Set(temp_dates)];
-            setDates(uniqueDates.map((item) => item.split("T")[0]));
+            setDates(uniqueDates);
 
             const temp_results = submission.map((item) => item.result);
             const uniqueResults = [...new Set(temp_results)];
@@ -68,22 +84,25 @@ function FilterSubmissionFiltering({
             setResults(
                 uniqueResults
                     .sort()
-                    .map((item) => {
+                    .flatMap((item) => {
                         if (
-                            typeof projectResults[item] != "undefined" &&
-                            projectResults[item] != null
+                            typeof projectResults[item] !== "undefined" &&
+                            projectResults[item] !== null
                         ) {
                             var resultLabel = JSON.parse(projectResults[item]);
-                            return {
-                                ...resultLabel,
-                                key: item,
-                            };
+                            return [
+                                {
+                                    ...resultLabel,
+                                    key: item,
+                                },
+                            ];
                         }
-                    })
-                    .filter((item) => item !== undefined),
+
+                        return [];
+                    }),
             );
         }
-    }, [submission]);
+    }, [projectResults, submission]);
 
     return (
         <div className="border border-300-slate mb-3 rounded-xl grid grid-cols-4  divide-x bg-white overflow-hidden">

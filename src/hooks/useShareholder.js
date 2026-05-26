@@ -30,37 +30,46 @@ const DEFAULT_SHAREHOLDER_PROJECT_COLUMNS = [
     "result",
 ].join(", ");
 
-export const fetchShareholdersFromProject = async ({
-    project_id,
-    columns = DEFAULT_SHAREHOLDER_PROJECT_COLUMNS,
-}) => {
-    const shareholders = [];
+export const fetchShareholdersFromProject = async ({ project_id, columns }) => {
+    // First, get the count
+    const { count, error: countError } = await supabase
+        .from("shareholder")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", project_id);
 
-    for (let from = 0; ; from += SHAREHOLDER_FETCH_BATCH_SIZE) {
-        const to = from + SHAREHOLDER_FETCH_BATCH_SIZE - 1;
-        const { data, error } = await supabase
-            .from("shareholder")
-            .select(columns)
-            .eq("project_id", project_id)
-            .order("id", { ascending: false })
-            .range(from, to);
+    if (countError) throw countError;
 
-        if (error) {
-            throw error;
-        }
-
-        if (!data?.length) {
-            break;
-        }
-
-        shareholders.push(...data);
-
-        if (data.length < SHAREHOLDER_FETCH_BATCH_SIZE) {
-            break;
-        }
+    // Build all batch ranges upfront
+    const batchSize = SHAREHOLDER_FETCH_BATCH_SIZE;
+    const batches = [];
+    for (let from = 0; from < count; from += batchSize) {
+        batches.push({ from, to: from + batchSize - 1 });
     }
 
-    return shareholders;
+    // Fetch all batches in parallel (cap concurrency to avoid DB overload)
+    const CONCURRENCY = 5;
+    const results = [];
+
+    for (let i = 0; i < batches.length; i += CONCURRENCY) {
+        const chunk = batches.slice(i, i + CONCURRENCY);
+        const chunkResults = await Promise.all(
+            chunk.map(({ from, to }) =>
+                supabase
+                    .from("shareholder")
+                    .select(columns || DEFAULT_SHAREHOLDER_PROJECT_COLUMNS)
+                    .eq("project_id", project_id)
+                    .order("id", { ascending: false })
+                    .range(from, to)
+                    .then(({ data, error }) => {
+                        if (error) throw error;
+                        return data || [];
+                    }),
+            ),
+        );
+        results.push(...chunkResults.flat());
+    }
+
+    return results;
 };
 
 const getShareholdersFromProject = async ({ queryKey }) => {
@@ -522,9 +531,7 @@ export const useMissingShareholdersFromEsignon = (project) => {
     };
 };
 
-// get shareholder eproxy no result
-
-const getShareholderEproxyNoResult = async ({ queryKey }) => {
+const getShareholderEproxy = async ({ queryKey }) => {
     const project_id = queryKey[1];
 
     if (!project_id) {
@@ -535,7 +542,6 @@ const getShareholderEproxyNoResult = async ({ queryKey }) => {
         .from("shareholder")
         .select("*")
         .eq("project_id", project_id)
-        .or('result.is.null,result.eq.""')
         .not("api_recipient_contact", "is", null)
         .not("api_recipient_completion_date", "is", null);
 
@@ -547,24 +553,16 @@ const getShareholderEproxyNoResult = async ({ queryKey }) => {
         return [];
     }
 
-    return (data || []).filter((shareholder) => {
-        const hasRecipientContact =
-            String(shareholder?.api_recipient_contact ?? "").trim() !== "";
-        const hasCompletionDate =
-            String(shareholder?.api_recipient_completion_date ?? "").trim() !==
-            "";
-
-        return hasRecipientContact && hasCompletionDate;
-    });
+    return (data || []).filter(
+        (s) =>
+            s.api_recipient_contact?.trim() &&
+            s.api_recipient_completion_date?.trim(),
+    );
 };
 
-export const useShareholderEproxyNoResult = (project_id) => {
-    return useQuery(
-        ["ShareholderEproxyNoResult", project_id],
-        getShareholderEproxyNoResult,
-        {
-            enabled: !!project_id,
-            keepPreviousData: true,
-        },
-    );
+export const useShareholderEproxy = (project_id) => {
+    return useQuery(["ShareholderEproxy", project_id], getShareholderEproxy, {
+        enabled: !!project_id,
+        keepPreviousData: true,
+    });
 };

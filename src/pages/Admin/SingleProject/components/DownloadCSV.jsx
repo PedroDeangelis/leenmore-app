@@ -148,11 +148,12 @@ const formatMissingShareholderRow = (shareholder) => {
     ];
 };
 
-const createMissingShareholderIterator = (missingShareholders) => (callback) => {
-    (missingShareholders || []).forEach((shareholder) => {
-        callback(formatMissingShareholderRow(shareholder));
-    });
-};
+const createMissingShareholderIterator =
+    (missingShareholders) => (callback) => {
+        (missingShareholders || []).forEach((shareholder) => {
+            callback(formatMissingShareholderRow(shareholder));
+        });
+    };
 
 const formatCSVCell = (value) => {
     const normalizedValue = String(normalizeWorksheetCell(value) ?? "");
@@ -222,7 +223,11 @@ const saveWorkbookExport = async ({
     saveAs(new Blob([buffer], { type: MIME_XLSX }), `${filename}.xlsx`);
 };
 
-const saveZipFallback = async ({ project, downloadData, missingShareholders }) => {
+const saveZipFallback = async ({
+    project,
+    downloadData,
+    missingShareholders,
+}) => {
     const zip = new JSZip();
     const filename = sanitizeFilename(project?.title || "project-data");
     const projectSheetTitle = sanitizeFilename(
@@ -277,13 +282,20 @@ function DownloadCSV({ project, projectShareholders }) {
 
             if (project.link_manage_id) {
                 try {
-                    missingShareholders = await fetchMissingShareholders(project);
+                    missingShareholders =
+                        await fetchMissingShareholders(project);
                 } catch (error) {
-                    console.error("Failed to fetch missing shareholders:", error);
+                    console.error(
+                        "Failed to fetch missing shareholders:",
+                        error,
+                    );
                 }
             }
 
-            const downloadData = getDownloadCSV({ project, projectShareholders });
+            const downloadData = getDownloadCSV({
+                project,
+                projectShareholders,
+            });
             const optimizeForLargeExport = shouldOptimizeWorkbook(downloadData);
 
             try {
@@ -323,7 +335,10 @@ function DownloadCSV({ project, projectShareholders }) {
     }
 
     return (
-        <Button onClick={handleDownload} disabled={isMissingShareholdersLoading}>
+        <Button
+            onClick={handleDownload}
+            disabled={isMissingShareholdersLoading}
+        >
             <FileDownloadIcon />
             {transl("Download CSV Data")}
         </Button>

@@ -5,6 +5,8 @@ const generateWorkerReport = async ({
     project_id,
     data,
     filename,
+    project_title = "project",
+    worker_name = "worker",
     multiple = false,
 }) => {
     let response = false;
@@ -24,6 +26,8 @@ const generateWorkerReport = async ({
                 project_id,
                 data,
                 filename,
+                project_title,
+                worker_name,
                 token: process.env.REACT_APP_STORAGE_AUTH_KEY,
             },
             {

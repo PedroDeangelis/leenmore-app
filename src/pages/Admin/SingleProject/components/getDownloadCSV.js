@@ -105,7 +105,9 @@ const buildSubmissionLookup = (submissions, resultTable) => {
                 submission?.created_at || submission?.date || 0,
             ).getTime();
 
-            if (createdAtTimestamp >= shareholderEntry.latestSubmissionTimestamp) {
+            if (
+                createdAtTimestamp >= shareholderEntry.latestSubmissionTimestamp
+            ) {
                 shareholderEntry.latestSubmissionTimestamp = createdAtTimestamp;
                 shareholderEntry.latestSubmissionDate = formatMomentValue(
                     submission?.created_at || submission?.date,
@@ -166,7 +168,8 @@ const buildSubmissionLookup = (submissions, resultTable) => {
 
             if (isLatestForDay) {
                 dayEntry.latestDateTimestamp = submissionDateTimestamp;
-                dayEntry.latestCreatedAtTimestamp = submissionCreatedAtTimestamp;
+                dayEntry.latestCreatedAtTimestamp =
+                    submissionCreatedAtTimestamp;
                 dayEntry.latestId = submissionId;
                 dayEntry.user = submission?.user_name ?? "";
                 dayEntry.result = resultTable[submission?.result]?.name ?? "";
@@ -203,6 +206,7 @@ const buildShareholderRow = ({
         customer?.eletronic_voting,
         customer?.address,
         customer?.contact_info,
+        customer?.contact_info_2,
         customer?.database,
         customer?.contact_worker,
         joinShareholderUsers(customer?.user),
@@ -238,6 +242,7 @@ export default function getDownloadCSV({ project, projectShareholders }) {
         transl("Eletronic Voting"),
         transl("Address"),
         transl("Contact"),
+        transl("Contact 2"),
         transl("Database"),
         CONTACT_HEADER,
         transl("Worker(s)"),

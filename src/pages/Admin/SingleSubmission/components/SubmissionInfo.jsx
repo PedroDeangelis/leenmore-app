@@ -17,16 +17,17 @@ function SubmissionInfo({ data }) {
 
                 if (
                     !shareholdersTotal.has(shareholder_id) &&
-                    shareholder.eletronic_voting == ""
+                    (shareholder?.eletronic_voting == "" ||
+                        shareholder?.eletronic_voting == null)
                 ) {
                     shareholdersTotal.add(shareholder_id);
                     const shares = parseInt(
                         shareholder.shares.replace(/,/g, ""),
-                        10
+                        10,
                     );
                     const sharesTotal = parseInt(
                         shareholder.shares_total.replace(/,/g, ""),
-                        10
+                        10,
                     );
                     totalShares += shares;
                     totalSharesTotal += sharesTotal;

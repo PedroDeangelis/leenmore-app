@@ -40,11 +40,19 @@ function SingleProjectResults({
     const [resultsTemp, setResultsTemp] = useState([...results]);
 
     const handleResultsSave = () => {
+        const resultsWithOrder = resultsTemp.map((item, index) => {
+            const parsed = typeof item === "string" ? JSON.parse(item) : item;
+            return JSON.stringify({
+                ...parsed,
+                order: parsed?.order ?? index,
+            });
+        });
+
         updateProjectMutation.mutate(
             {
                 project_id: project.id,
                 meta: {
-                    results: resultsTemp,
+                    results: resultsWithOrder,
                 },
             },
             {

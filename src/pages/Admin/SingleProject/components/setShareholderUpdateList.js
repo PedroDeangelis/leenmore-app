@@ -39,16 +39,17 @@ export default function setShareholderUpdateList(csv) {
         eletronic_voting: getIndex("eletronicvoting", "전자투표") ?? 7,
         address: getIndex("address", "주소") ?? 8,
         contact_info: getIndex("contactinfo", "주소서치") ?? 9,
-        database: getIndex("database", "구연락처") ?? 10,
-        contact_worker: getIndex("연락처") ?? 11,
-        user: getIndex("worker", "활동가") ?? 12,
-        prev_comment: getIndex("prevcomment", "구 판단") ?? 13,
-        prev_result: getIndex("prevresult", "구 멘트") ?? 14,
-        prev_note: getIndex("prevnote", "비고") ?? 15,
+        contact_info_2: getIndex("contactinfo2", "주소서치2") ?? 10,
+        database: getIndex("database", "구연락처") ?? 11,
+        contact_worker: getIndex("연락처") ?? 12,
+        user: getIndex("worker", "활동가") ?? 13,
+        prev_comment: getIndex("prevcomment", "구 판단") ?? 14,
+        prev_result: getIndex("prevresult", "구 멘트") ?? 15,
+        prev_note: getIndex("prevnote", "비고") ?? 16,
         api_recipient_contact:
-            getIndex("apirecipientcontact", "전자위임연락처") ?? 16,
+            getIndex("apirecipientcontact", "전자위임연락처") ?? 17,
         api_recipient_completion_date:
-            getIndex("apirecipientcompletiondate", "전자위임날짜") ?? 17,
+            getIndex("apirecipientcompletiondate", "전자위임날짜") ?? 18,
     };
 
     csv?.forEach((row, key) => {

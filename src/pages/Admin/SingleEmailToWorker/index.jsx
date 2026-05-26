@@ -325,6 +325,8 @@ function SingleEmailToWorker() {
                             {
                                 project_id,
                                 filename: `${project?.title || "project"}_주주명부_${workerName}`,
+                                project_title: project?.title || "project",
+                                worker_name: workerName,
                                 data: {
                                     sheet_name: workerName,
                                     rows: workerShareholders.map(
@@ -386,19 +388,20 @@ function SingleEmailToWorker() {
     };
 
     const buildWorkerReportPayload = (shareholder) => ({
-        a: shareholder?.no ?? "",
+        a: shareholder?.no ?? "", // 연번
         b: shareholder?.date_of_birth_code
             ? `${shareholder?.name}${shareholder?.date_of_birth_code}`
-            : "",
-        c: shareholder?.sex ?? "",
-        d: shareholder?.name ?? "",
-        e: shareholder?.prev_note ?? "",
-        f: shareholder?.shares_total ?? "",
-        g: shareholder?.address ?? "",
-        h: shareholder?.contact_info ?? "",
-        i: shareholder?.database ?? "",
-        j: shareholder?.prev_result ?? "",
-        k: shareholder?.prev_comment ?? "",
+            : "", // 고유번호
+        c: shareholder?.sex ?? "", // 성별
+        d: shareholder?.prev_note ?? "", // 비고
+        e: shareholder?.shares_total ?? "", // 총소유주식수
+        f: shareholder?.address ?? "", // 주소
+        g: shareholder?.contact_info ?? "", // 주소서치
+        h: shareholder?.contact_info_2 ?? "", // 주소서치2
+        i: shareholder?.database ?? "", // 구연락처
+        j: shareholder?.prev_result ?? "", // 구 판단
+        k: shareholder?.prev_comment ?? "", // 구 멘트
+        l: shareholder?.contact_worker ?? "", // 연락처
     });
 
     const getDownloadFilename = (payloadFilename, xlsxPath, isPdf) => {
@@ -467,6 +470,8 @@ function SingleEmailToWorker() {
             {
                 project_id,
                 filename: `${project?.title || "project"}_주주명부_${workerName}`,
+                project_title: project?.title || "project",
+                worker_name: workerName,
                 data: {
                     sheet_name: workerName,
                     rows: workerShareholders.map(buildWorkerReportPayload),
@@ -523,6 +528,8 @@ function SingleEmailToWorker() {
 
                 return {
                     sheet_name: workerName,
+                    project_title: project?.title || "project",
+                    worker_name: workerName,
                     rows: workerShareholders.map(buildWorkerReportPayload),
                 };
             })

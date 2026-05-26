@@ -15,6 +15,7 @@ export default function getShaholdersEditList(shareholders) {
             element.eletronic_voting,
             element.address,
             element.contact_info,
+            element.contact_info_2,
             element.database,
             element.contact_worker,
             element.user.join("/"),

@@ -42,14 +42,15 @@ export default function getFormatedShareholders(csv) {
         eletronic_voting: getIndex("전자투표") ?? 6,
         address: getIndex("주소") ?? 7,
         contact_info: getIndex("주소서치") ?? 8,
-        database: getIndex("구연락처") ?? 9,
-        contact_worker: getIndex("연락처") ?? 10,
-        worker: getIndex("활동가") ?? 11,
-        prev_result: getIndex("구 판단") ?? 12,
-        prev_comment: getIndex("구 멘트") ?? 13,
-        prev_note: getIndex("비고") ?? 14,
-        api_recipient_contact: getIndex("전자위임연락처") ?? 15,
-        api_recipient_completion_date: getIndex("전자위임날짜") ?? 16,
+        contact_info_2: getIndex("주소서치2") ?? 9,
+        database: getIndex("구연락처") ?? 10,
+        contact_worker: getIndex("연락처") ?? 11,
+        worker: getIndex("활동가") ?? 12,
+        prev_result: getIndex("구 판단") ?? 13,
+        prev_comment: getIndex("구 멘트") ?? 14,
+        prev_note: getIndex("비고") ?? 15,
+        api_recipient_contact: getIndex("전자위임연락처") ?? 16,
+        api_recipient_completion_date: getIndex("전자위임날짜") ?? 17,
     };
 
     csv?.forEach((row, key) => {
@@ -93,6 +94,7 @@ export default function getFormatedShareholders(csv) {
         const eletronicVoting = row[indexes.eletronic_voting] ?? "";
         const address = row[indexes.address] ?? "";
         const contactInfo = row[indexes.contact_info] ?? "";
+        const contactInfo2 = row[indexes.contact_info_2] ?? "";
         const database = row[indexes.database] ?? "";
         const contactForWorker = row[indexes.contact_worker] ?? "";
         const worker = row[indexes.worker] ?? "";
@@ -131,6 +133,7 @@ export default function getFormatedShareholders(csv) {
             shares: formattedShares,
             shares_total: formattedTotalShares,
             contact_info: contactInfo,
+            contact_info_2: contactInfo2,
             database: database,
             contact_worker: contactForWorker,
             eletronic_voting: eletronicVoting,
