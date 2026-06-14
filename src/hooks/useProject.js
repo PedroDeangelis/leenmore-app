@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import { fetchShareholdersFromProject } from "./useShareholder";
 import transl from "../pages/components/translate";
 import supabase from "../utils/supabaseClient";
+import { fetchAllInBatches } from "../utils/supabaseBatchFetch";
 
 //Get list of All projects
 
@@ -321,13 +322,17 @@ const getProjectAndSubmissions = async ({ queryKey }) => {
         return false;
     }
 
-    const { data: submissionData, error: submissionError } = await supabase
-        .from("submission")
-        .select("*")
-        .eq("project_id", project_id)
-        .eq("is_deleted", false);
-
-    if (submissionError) {
+    let submissionData;
+    try {
+        // Batched fetch so projects with more than Supabase's default 1,000-row
+        // cap return every submission (otherwise the CSV export silently drops
+        // everything past the first 1,000).
+        submissionData = await fetchAllInBatches({
+            table: "submission",
+            match: { project_id, is_deleted: false },
+            orderColumn: "id",
+        });
+    } catch (submissionError) {
         return false;
     }
 

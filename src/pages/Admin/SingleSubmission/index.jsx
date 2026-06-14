@@ -66,7 +66,17 @@ function SingleSubmission() {
             );
         }
 
-        const submissionList = Array.isArray(submission) ? submission : [];
+        const submissionList = Array.isArray(submission)
+            ? submission.map((item) => {
+                  const sh = item?.shareholder;
+                  const hasCompletedEproxy =
+                      !!sh?.api_recipient_contact &&
+                      !!sh?.api_recipient_completion_date;
+                  return hasCompletedEproxy
+                      ? { ...item, result: "eproxy_link" }
+                      : item;
+              })
+            : [];
         const combinedSubmission = [
             ...submissionList,
             ...customerSubmissionFromEproxy,

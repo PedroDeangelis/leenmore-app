@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import supabase from "../utils/supabaseClient";
+import { fetchAllInBatches } from "../utils/supabaseBatchFetch";
 
 const SHAREHOLDER_FETCH_BATCH_SIZE = 1000;
 const SHAREHOLDER_INSERT_BATCH_SIZE = 1000;
@@ -30,47 +31,15 @@ const DEFAULT_SHAREHOLDER_PROJECT_COLUMNS = [
     "result",
 ].join(", ");
 
-export const fetchShareholdersFromProject = async ({ project_id, columns }) => {
-    // First, get the count
-    const { count, error: countError } = await supabase
-        .from("shareholder")
-        .select("id", { count: "exact", head: true })
-        .eq("project_id", project_id);
-
-    if (countError) throw countError;
-
-    // Build all batch ranges upfront
-    const batchSize = SHAREHOLDER_FETCH_BATCH_SIZE;
-    const batches = [];
-    for (let from = 0; from < count; from += batchSize) {
-        batches.push({ from, to: from + batchSize - 1 });
-    }
-
-    // Fetch all batches in parallel (cap concurrency to avoid DB overload)
-    const CONCURRENCY = 5;
-    const results = [];
-
-    for (let i = 0; i < batches.length; i += CONCURRENCY) {
-        const chunk = batches.slice(i, i + CONCURRENCY);
-        const chunkResults = await Promise.all(
-            chunk.map(({ from, to }) =>
-                supabase
-                    .from("shareholder")
-                    .select(columns || DEFAULT_SHAREHOLDER_PROJECT_COLUMNS)
-                    .eq("project_id", project_id)
-                    .order("id", { ascending: false })
-                    .range(from, to)
-                    .then(({ data, error }) => {
-                        if (error) throw error;
-                        return data || [];
-                    }),
-            ),
-        );
-        results.push(...chunkResults.flat());
-    }
-
-    return results;
-};
+export const fetchShareholdersFromProject = ({ project_id, columns }) =>
+    fetchAllInBatches({
+        table: "shareholder",
+        match: { project_id },
+        columns: columns || DEFAULT_SHAREHOLDER_PROJECT_COLUMNS,
+        orderColumn: "id",
+        ascending: false,
+        batchSize: SHAREHOLDER_FETCH_BATCH_SIZE,
+    });
 
 const getShareholdersFromProject = async ({ queryKey }) => {
     const project_id = queryKey[1];
@@ -543,7 +512,9 @@ const getShareholderEproxy = async ({ queryKey }) => {
         .select("*")
         .eq("project_id", project_id)
         .not("api_recipient_contact", "is", null)
-        .not("api_recipient_completion_date", "is", null);
+        .neq("api_recipient_contact", "")
+        .not("api_recipient_completion_date", "is", null)
+        .neq("api_recipient_completion_date", "");
 
     if (error) {
         console.error(
