@@ -4,6 +4,7 @@ import transl from "../../components/translate";
 import SearchProjectBar from "../components/SearchProjectBar";
 import SubmissionsProjectLoop from "../Submissions/components/SubmissionsProjectLoop";
 import { useAllProjectsSimpleList } from "../../../hooks/useProject";
+import { koreanToday } from "../../../utils/koreanDate";
 
 function ActivityReport() {
     const [searchProject, setSearchProject] = useState("");
@@ -20,7 +21,7 @@ function ActivityReport() {
                             .includes(searchProject.toLowerCase())
                     )
                     .sort((projectA, projectB) => {
-                        const now = new Date();
+                        const now = new Date(koreanToday());
 
                         // If both projects have no end date, they are considered equal.
                         if (!projectA.end_date && !projectB.end_date) {

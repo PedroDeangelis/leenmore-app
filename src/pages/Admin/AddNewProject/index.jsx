@@ -5,11 +5,11 @@ import {
     CardContent,
     CircularProgress,
 } from "@mui/material";
-import moment from "moment";
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useProjectCreate } from "../../../hooks/useProject";
+import { koreanNow, koreanToday } from "../../../utils/koreanDate";
 import transl from "../../components/translate";
 import Header from "../components/Header";
 import FormNewProject from "./components/FormNewProject";
@@ -18,9 +18,9 @@ import ShareholdersUpload from "./components/FormShareholdersUpload";
 
 function AddNewProject() {
     const formTitleRef = useRef();
-    const [startDate, setStartDate] = useState(moment().format("Y-MM-DD"));
+    const [startDate, setStartDate] = useState(koreanToday("Y-MM-DD"));
     const [endDate, setEndDate] = useState(
-        moment().add(10, "days").format("Y-MM-DD")
+        koreanNow().add(10, "days").format("Y-MM-DD")
     );
 
     const sharesIssuedRef = useRef();

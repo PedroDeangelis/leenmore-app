@@ -1,5 +1,6 @@
 import moment from "moment";
 import transl from "../../../components/translate";
+import { koreanNow } from "../../../../utils/koreanDate";
 
 const getEndDate = (end_date) => {
     let daysLeft = null;
@@ -7,7 +8,7 @@ const getEndDate = (end_date) => {
 
     if (end_date) {
         //endDate = 2023-03-26 00:00:00+00;
-        const days = moment(end_date).diff(moment(), "days") + 1;
+        const days = moment(end_date).diff(koreanNow(), "days") + 1;
 
         if (days > 0) {
             let text = transl("days left");

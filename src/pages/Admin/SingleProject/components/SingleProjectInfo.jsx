@@ -16,6 +16,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import EditProjectTitlenDate from "./EditProjectTitlenDate";
 import ProjectMessageEditing from "./ProjectMessageEditing";
 import EditProjectLinkMangeId from "./EditProjectLinkMangeId";
+import { koreanNow, koreanToday } from "../../../../utils/koreanDate";
 
 function SingleProjectInfo({
     title,
@@ -83,7 +84,7 @@ function SingleProjectInfo({
     useEffect(() => {
         if (endDate) {
             //endDate = 2023-03-26 00:00:00+00;
-            const days = moment(endDate).diff(moment(), "days") + 1;
+            const days = moment(endDate).diff(koreanNow(), "days") + 1;
 
             if (days > 0) {
                 setDaysLeft(`${days} ${transl("days left")}`);
@@ -155,12 +156,12 @@ function SingleProjectInfo({
                                 startDateVal={
                                     startDate
                                         ? moment(startDate).format("Y-MM-DD")
-                                        : moment().format("Y-MM-DD")
+                                        : koreanToday("Y-MM-DD")
                                 }
                                 endDateVal={
                                     endDate
                                         ? moment(endDate).format("Y-MM-DD")
-                                        : moment()
+                                        : koreanNow()
                                               .add(10, "days")
                                               .format("Y-MM-DD")
                                 }

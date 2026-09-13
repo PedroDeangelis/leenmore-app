@@ -6,27 +6,14 @@ import {
     InputLabel,
     OutlinedInput,
 } from "@mui/material";
-import React, { useState } from "react";
+import React from "react";
 import transl from "../../../components/translate";
 import SearchIcon from "@mui/icons-material/Search";
 
-function ReceiptSearch({ receipts, setFilteredReceipts }) {
-    const [search, setSearch] = useState("");
-
-    const handleSearchChange = (value) => {
-        setSearch(value);
-        if (value === "") {
-            setFilteredReceipts(receipts);
-        } else {
-            const filtered = receipts.filter((receipt) => {
-                return receipt.user_name
-                    .toLowerCase()
-                    .includes(value.toLowerCase());
-            });
-            setFilteredReceipts(filtered);
-        }
-    };
-
+// Controlled input only. The page owns the search term so that it can be
+// combined with the other filters in one place instead of each control
+// overwriting the filtered list.
+function ReceiptSearch({ search, setSearch }) {
     return (
         <Card className="max-w-2xl mx-auto mb-8">
             <CardContent>
@@ -44,7 +31,7 @@ function ReceiptSearch({ receipts, setFilteredReceipts }) {
                         aria-describedby="outlined-seacrh-helper-text"
                         label={`${transl("Search for receipt")}...`}
                         value={search}
-                        onChange={(e) => handleSearchChange(e.target.value)}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </FormControl>
             </CardContent>

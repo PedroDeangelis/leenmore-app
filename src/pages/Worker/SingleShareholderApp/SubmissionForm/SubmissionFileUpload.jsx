@@ -1,8 +1,8 @@
 import { Alert, CircularProgress } from "@mui/material";
-import moment from "moment";
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useFileUpload } from "../../../../hooks/useFileUpload";
+import { koreanToday } from "../../../../utils/koreanDate";
 import transl from "../../../components/translate";
 import ImageUploadHolder from "./ImageUploadHolder";
 
@@ -42,7 +42,7 @@ function SubmissionFileUpload({
                 user: user,
                 project: project,
                 project_id: project_id,
-                date: moment().format("MM-DD"),
+                date: koreanToday("MM-DD"),
                 filename: filename,
                 file: file,
             },

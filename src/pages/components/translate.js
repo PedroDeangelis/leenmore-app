@@ -299,6 +299,22 @@ export default function transl(char) {
         "edit email receiver": "이메일 수신자 수정",
         "email receiver": "이메일 수신자",
         "loading shareholders": "주주 불러오는 중",
+        active: "활성",
+        deactivated: "비활성",
+        "has phone number": "전화번호 있음",
+        "no phone number": "전화번호 없음",
+        "no users found": "사용자를 찾을 수 없습니다",
+        "sort by name": "이름 정렬",
+        "sort direction": "정렬 방향",
+        "created from": "생성 시작일",
+        "created to": "생성 종료일",
+        "no projects found": "프로젝트를 찾을 수 없습니다",
+        "default order": "기본 정렬",
+        "user name": "사용자 이름",
+        "date from": "날짜 시작",
+        "date to": "날짜 종료",
+        "min amount": "최소 금액",
+        "max amount": "최대 금액",
     };
 
     return map[key] ? map[key] : char;

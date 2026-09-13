@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import ProjectWorkspaceLoop from "./components/ProjectWorkspaceLoop";
 import SearchProjectBar from "../components/SearchProjectBar";
 import { useAllProjectsSimpleList } from "../../../hooks/useProject";
-import moment from "moment";
+import { koreanToday } from "../../../utils/koreanDate";
 
 function Dashboard() {
     const [searchProject, setSearchProject] = useState("");
@@ -21,7 +21,7 @@ function Dashboard() {
                             .includes(searchProject.toLowerCase())
                     )
                     .sort((projectA, projectB) => {
-                        const now = new Date();
+                        const now = new Date(koreanToday());
 
                         // If both projects have no end date, they are considered equal.
                         if (!projectA.end_date && !projectB.end_date) {

@@ -13,6 +13,28 @@ import ButtonLockReceiptSubmission from "./components/ButtonLockReceiptSubmissio
 import ReceiptBulkDelete from "./components/ReceiptBulkDelete";
 import DownloadIcon from "@mui/icons-material/Download";
 import createExcelForReceipts from "./components/createExcelForReceipts";
+import FilterReceiptsBar from "./components/FilterReceiptsBar";
+import { isWithinKoreanDayRange } from "../../../utils/koreanDate";
+import parseAmount from "../../components/parseAmount";
+
+// Both bounds are inclusive and an empty bound means unbounded.
+const isWithinAmountRange = (amount, amountMin, amountMax) => {
+    if (amountMin === "" && amountMax === "") {
+        return true;
+    }
+
+    const value = parseAmount(amount);
+
+    if (amountMin !== "" && value < parseAmount(amountMin)) {
+        return false;
+    }
+
+    if (amountMax !== "" && value > parseAmount(amountMax)) {
+        return false;
+    }
+
+    return true;
+};
 
 function Receipts() {
     const { data: receipts, isLoading } = useReceiptsAdmin();
@@ -22,12 +44,52 @@ function Receipts() {
     const [viewTotalAmount, setViewTotalAmount] = useState(false);
     const [bulkDeleteOn, setBulkDeleteOn] = useState(false);
     const [bulkDeleteList, setBulkDeleteList] = useState([]);
+    const [search, setSearch] = useState("");
+    const [usageFilter, setUsageFilter] = useState("all");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    const [amountMin, setAmountMin] = useState("");
+    const [amountMax, setAmountMax] = useState("");
+    const [sortBy, setSortBy] = useState("default");
+    const [sortDirection, setSortDirection] = useState("asc");
 
     useEffect(() => {
-        if (receipts) {
-            setFilteredReceipts(receipts);
+        // getReceiptsAdmin resolves to { data, error } rather than an array
+        // when the query fails, so guard before filtering.
+        if (Array.isArray(receipts)) {
+            setFilteredReceipts(
+                receipts
+                    .filter((receipt) =>
+                        String(receipt.user_name ?? "")
+                            .toLowerCase()
+                            .includes(search.toLowerCase()),
+                    )
+                    .filter(
+                        (receipt) =>
+                            usageFilter === "all" ||
+                            receipt.usage_history === usageFilter,
+                    )
+                    .filter((receipt) =>
+                        isWithinKoreanDayRange(receipt.date, dateFrom, dateTo),
+                    )
+                    .filter((receipt) =>
+                        isWithinAmountRange(
+                            receipt.amount,
+                            amountMin,
+                            amountMax,
+                        ),
+                    ),
+            );
         }
-    }, [receipts]);
+    }, [
+        receipts,
+        search,
+        usageFilter,
+        dateFrom,
+        dateTo,
+        amountMin,
+        amountMax,
+    ]);
 
     const downloadExcelFile = () => {
         const excelFile = createExcelForReceipts(receipts);
@@ -77,9 +139,23 @@ function Receipts() {
             ) : (
                 <div className="flex items-start">
                     <div className="w-full">
-                        <ReceiptSearch
+                        <ReceiptSearch search={search} setSearch={setSearch} />
+                        <FilterReceiptsBar
                             receipts={receipts}
-                            setFilteredReceipts={setFilteredReceipts}
+                            usageFilter={usageFilter}
+                            setUsageFilter={setUsageFilter}
+                            dateFrom={dateFrom}
+                            setDateFrom={setDateFrom}
+                            dateTo={dateTo}
+                            setDateTo={setDateTo}
+                            amountMin={amountMin}
+                            setAmountMin={setAmountMin}
+                            amountMax={amountMax}
+                            setAmountMax={setAmountMax}
+                            sortBy={sortBy}
+                            setSortBy={setSortBy}
+                            sortDirection={sortDirection}
+                            setSortDirection={setSortDirection}
                         />
                         <ReceiptBulkDelete
                             bulkDeleteOn={bulkDeleteOn}
@@ -92,6 +168,8 @@ function Receipts() {
                             bulkDeleteOn={bulkDeleteOn}
                             bulkDeleteList={bulkDeleteList}
                             setBulkDeleteList={setBulkDeleteList}
+                            sortBy={sortBy}
+                            sortDirection={sortDirection}
                         />
                     </div>
                     {editingDeadline ||

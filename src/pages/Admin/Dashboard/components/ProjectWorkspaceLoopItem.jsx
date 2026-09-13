@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import moment from "moment";
 import { useSingleProjectWithShareholders } from "../../../../hooks/useProject";
 import ProjectWorkspaceLoopItemContent from "./ProjectWorkspaceLoopItemContent";
+import { koreanNow } from "../../../../utils/koreanDate";
 
 function ProjectWorkspaceLoopItem({ project }) {
     const [isAccordionOpen, setIsAccordionOpen] = useState(false);
@@ -17,7 +18,8 @@ function ProjectWorkspaceLoopItem({ project }) {
     useEffect(() => {
         if (project?.end_date) {
             //endDate = 2023-03-26 00:00:00+00;
-            const days = moment(project.end_date).diff(moment(), "days") + 1;
+            const days =
+                moment(project.end_date).diff(koreanNow(), "days") + 1;
 
             if (days > 0) {
                 setDaysLeft(`${days} ${transl("days left")}`);

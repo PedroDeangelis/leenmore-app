@@ -1,5 +1,4 @@
 import { CircularProgress } from "@mui/material";
-import moment from "moment";
 import React from "react";
 import { useParams } from "react-router-dom";
 import { useShareholderFromWorker } from "../../../hooks/useShareholder";
@@ -65,7 +64,6 @@ function SingleShareholderApp() {
                             user={usermeta.first_name}
                             user_id={usermeta.id}
                             shareholder={shareholder}
-                            date={moment().format("YYYYMMDD")}
                         />
                     </>
                 )}

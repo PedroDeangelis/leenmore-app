@@ -8,7 +8,6 @@ import {
     OutlinedInput,
     TextField,
 } from "@mui/material";
-import moment from "moment/moment";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -19,12 +18,12 @@ import SelectResultsProject from "./SelectResultsProject";
 import SubmissionFileUpload from "./SubmissionFileUpload";
 import PhoneNumberInput from "./PhoneNumberInput";
 import SubmissionPrivacyConscentFileUpload from "./SubmissionPrivacyConscentFileUpload";
+import { koreanToday } from "../../../../utils/koreanDate";
 
 function SubmissionForm({
     project_id,
     filename,
     user,
-    date,
     user_id,
     shareholder,
     stayOnThePage = false,
@@ -41,7 +40,7 @@ function SubmissionForm({
     const [alertResult, setAlertResult] = useState(false);
     const [alertAttachment, setAlertAttachment] = useState(false);
     const [alertDate, setAlertDate] = useState(false);
-    const [fDate, setFDate] = useState(moment().format("Y-MM-DD"));
+    const [fDate, setFDate] = useState(koreanToday("Y-MM-DD"));
     const [listOfUploadedFiles, setListOfUploadedFiles] = useState([]);
     const [privacyConsentCheckbox, setPrivacyConsentCheckbox] = useState(null);
     const [privacyConsentFilePath, setPrivacyConsentFilePath] = useState(null);
@@ -145,7 +144,7 @@ function SubmissionForm({
 
     useEffect(() => {
         setFResult("");
-        setFDate(moment().format("Y-MM-DD"));
+        setFDate(koreanToday("Y-MM-DD"));
         setListOfUploadedFiles([]);
         setFResult("");
         setAlertNotes("");
@@ -170,10 +169,7 @@ function SubmissionForm({
                         id="date-outlined-label"
                         value={fDate}
                         type={`date`}
-                        onChange={(e) => {
-                            setFDate(e.target.value);
-                            if (alertDate) setAlertDate(false);
-                        }}
+                        disabled
                         required
                         label={transl("Date")}
                     />
@@ -264,7 +260,6 @@ function SubmissionForm({
                             filename={filename}
                             user={user}
                             project={project}
-                            date={date}
                             project_id={project_id}
                             fResult={fResult}
                             setAlertAttachment={setAlertAttachment}

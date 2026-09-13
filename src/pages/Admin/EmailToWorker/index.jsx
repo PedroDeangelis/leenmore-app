@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import { useAllProjectsSimpleList } from "../../../hooks/useProject";
 import SearchProjectBar from "../components/SearchProjectBar";
 import { Link } from "react-router-dom";
+import { koreanToday } from "../../../utils/koreanDate";
 
 function EmailToWorker() {
     const [searchProject, setSearchProject] = useState("");
@@ -20,7 +21,7 @@ function EmailToWorker() {
                             .includes(searchProject.toLowerCase()),
                     )
                     .sort((projectA, projectB) => {
-                        const now = new Date();
+                        const now = new Date(koreanToday());
 
                         // If both projects have no end date, they are considered equal.
                         if (!projectA.end_date && !projectB.end_date) {

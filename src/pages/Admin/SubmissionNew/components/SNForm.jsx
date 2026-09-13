@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import transl from "../../../components/translate";
 import { useUserList } from "../../../../hooks/useUser";
 import SubmissionForm from "../../../Worker/SingleShareholderApp/SubmissionForm/SubmissionForm";
-import moment from "moment";
 import { submissionEditAtom } from "../../../../helpers/atom";
 import { useAtom } from "jotai";
 import SNFormEdit from "./SNFormEdit";
@@ -110,7 +109,6 @@ function SNForm({ shareholder }) {
                             user={usermeta.first_name}
                             user_id={usermeta.id}
                             shareholder={shareholder}
-                            date={moment().format("YYYYMMDD")}
                             stayOnThePage={true}
                         />
                     )}
