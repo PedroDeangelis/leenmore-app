@@ -15,6 +15,7 @@ import Header from "../components/Header";
 import FormNewProject from "./components/FormNewProject";
 import FormResultCreator from "./components/FormResultCreator";
 import ShareholdersUpload from "./components/FormShareholdersUpload";
+import { serializeProjectResults } from "../../components/projectResults";
 
 function AddNewProject() {
     const formTitleRef = useRef();
@@ -75,7 +76,7 @@ function AddNewProject() {
         createProjectMutation.mutate(
             {
                 title: formTitleRef.current.value,
-                results: formResultsList,
+                results: serializeProjectResults(formResultsList),
                 status: status,
                 shareholders: shareholderList,
                 shares_issued: sharesIssuedRef.current.value,

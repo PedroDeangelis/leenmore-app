@@ -7,11 +7,38 @@ import {
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import transl from "../../../components/translate";
+import {
+    EPROXY_LINK_RESULT,
+    getEproxyLinkLabel,
+    getSubmissionDisplayResult,
+} from "../../../components/resultSentinels";
 
 const normalizeSubmissionDate = (value) =>
     String(value ?? "")
         .split("T")[0]
         .trim();
+
+// Selections are `null` for "everything" (the default) and an array for an
+// explicit pick. Keeping "everything" as its own state, rather than an array
+// of every option, means rows with no worker or date still show by default
+// and options that appear after a refetch are included automatically.
+const isAllSelected = (selected) => selected == null;
+
+const isOptionChecked = (selected, option) =>
+    isAllSelected(selected) || selected.includes(option);
+
+// "Show All" toggles between everything and nothing; ticking the last missing
+// option by hand folds back into "everything".
+const getNextSelection = (value, selected, options) => {
+    if (value.includes("all")) {
+        return isAllSelected(selected) ? [] : null;
+    }
+
+    const hasEveryOption =
+        options.length > 0 && options.every((option) => value.includes(option));
+
+    return hasEveryOption ? null : value;
+};
 
 function FilterSubmissionFiltering({
     submission,
@@ -22,40 +49,37 @@ function FilterSubmissionFiltering({
     resultSelect,
     setResultSelect,
     projectResults,
+    showOnlyTheLastSubmission,
 }) {
     const [workers, setWorkers] = useState([]);
     const [dates, setDates] = useState([]);
     const [results, setResults] = useState([]);
 
-    const handleWorkerChange = (event) => {
-        const val = event.target.value;
+    const resultKeys = results.map((item) => item.key);
 
-        if (val.includes("all")) {
-            setWorkerSelect([]);
-        } else {
-            setWorkerSelect(val);
-        }
+    const handleWorkerChange = (event) => {
+        setWorkerSelect(
+            getNextSelection(event.target.value, workerSelect, workers),
+        );
     };
 
     const handleDateChange = (event) => {
-        const val = event.target.value;
-
-        if (val.includes("all")) {
-            setDateSelect([]);
-        } else {
-            setDateSelect(val);
-        }
+        setDateSelect(getNextSelection(event.target.value, dateSelect, dates));
     };
 
     const handleResultChange = (event) => {
-        const val = event.target.value;
-
-        if (val.includes("all")) {
-            setResultSelect([]);
-        } else {
-            setResultSelect(val);
-        }
+        setResultSelect(
+            getNextSelection(event.target.value, resultSelect, resultKeys),
+        );
     };
+
+    const renderAllOr = (selected, getLabel) => (value) =>
+        isAllSelected(selected)
+            ? transl("Show All")
+            : value.map(getLabel).join(", ");
+
+    const getResultLabel = (key) =>
+        results.find((item) => item.key === key)?.name ?? key;
 
     useEffect(() => {
         if (submission) {
@@ -78,31 +102,45 @@ function FilterSubmissionFiltering({
             const uniqueDates = [...new Set(temp_dates)];
             setDates(uniqueDates);
 
-            const temp_results = submission.map((item) => item.result);
+            const temp_results = submission.map((item) =>
+                getSubmissionDisplayResult(item, showOnlyTheLastSubmission),
+            );
             const uniqueResults = [...new Set(temp_results)];
 
-            setResults(
-                uniqueResults
-                    .sort()
-                    .flatMap((item) => {
-                        if (
-                            typeof projectResults[item] !== "undefined" &&
-                            projectResults[item] !== null
-                        ) {
-                            var resultLabel = JSON.parse(projectResults[item]);
-                            return [
-                                {
-                                    ...resultLabel,
-                                    key: item,
-                                },
-                            ];
-                        }
+            // The e-proxy sentinel has no entry in `projectResults`, so the
+            // index lookup below drops it. Surface it as its own option, but
+            // only when rows actually carry it.
+            const eproxyOption = uniqueResults.includes(EPROXY_LINK_RESULT)
+                ? [
+                      {
+                          name: getEproxyLinkLabel(),
+                          color: "green",
+                          key: EPROXY_LINK_RESULT,
+                      },
+                  ]
+                : [];
 
-                        return [];
-                    }),
-            );
+            setResults([
+                ...uniqueResults.sort().flatMap((item) => {
+                    if (
+                        typeof projectResults[item] !== "undefined" &&
+                        projectResults[item] !== null
+                    ) {
+                        var resultLabel = JSON.parse(projectResults[item]);
+                        return [
+                            {
+                                ...resultLabel,
+                                key: item,
+                            },
+                        ];
+                    }
+
+                    return [];
+                }),
+                ...eproxyOption,
+            ]);
         }
-    }, [projectResults, submission]);
+    }, [projectResults, showOnlyTheLastSubmission, submission]);
 
     return (
         <div className="border border-300-slate mb-3 rounded-xl grid grid-cols-4  divide-x bg-white overflow-hidden">
@@ -117,16 +155,20 @@ function FilterSubmissionFiltering({
                     <Select
                         labelId="simple-select-worker"
                         id="simple-select-worker"
-                        value={workerSelect}
+                        value={workerSelect ?? workers}
                         label={transl("Worker")}
                         onChange={handleWorkerChange}
+                        renderValue={renderAllOr(workerSelect, (item) => item)}
                         multiple
                     >
-                        <MenuItem value="all">{transl("Show All")}</MenuItem>
+                        <MenuItem value="all">
+                            <Checkbox checked={isAllSelected(workerSelect)} />
+                            {transl("Show All")}
+                        </MenuItem>
                         {workers.sort().map((item) => (
                             <MenuItem key={item} value={item}>
                                 <Checkbox
-                                    checked={workerSelect.indexOf(item) > -1}
+                                    checked={isOptionChecked(workerSelect, item)}
                                 />
                                 {item}
                             </MenuItem>
@@ -142,18 +184,25 @@ function FilterSubmissionFiltering({
                     <Select
                         labelId="simple-select-date"
                         id="simple-select-date"
-                        value={dateSelect}
+                        value={dateSelect ?? dates}
                         label={transl("date")}
                         onChange={handleDateChange}
+                        renderValue={renderAllOr(dateSelect, (item) => item)}
                         multiple
                     >
-                        <MenuItem value="all">{transl("Show All")}</MenuItem>
+                        <MenuItem value="all">
+                            <Checkbox checked={isAllSelected(dateSelect)} />
+                            {transl("Show All")}
+                        </MenuItem>
                         {dates
                             .sort((a, b) => b.localeCompare(a))
                             .map((item) => (
                                 <MenuItem key={item} value={item}>
                                     <Checkbox
-                                        checked={dateSelect.indexOf(item) > -1}
+                                        checked={isOptionChecked(
+                                            dateSelect,
+                                            item,
+                                        )}
                                     />
                                     {item}
                                 </MenuItem>
@@ -169,33 +218,29 @@ function FilterSubmissionFiltering({
                     <Select
                         labelId="simple-select-result"
                         id="simple-select-result"
-                        value={resultSelect}
+                        value={resultSelect ?? resultKeys}
                         label={transl("result")}
                         onChange={handleResultChange}
+                        renderValue={renderAllOr(resultSelect, getResultLabel)}
                         multiple
                     >
-                        <MenuItem value="all">{transl("Show All")}</MenuItem>
+                        <MenuItem value="all">
+                            <Checkbox checked={isAllSelected(resultSelect)} />
+                            {transl("Show All")}
+                        </MenuItem>
                         {results.map((item, key) => {
                             return (
                                 <MenuItem key={item.key} value={item.key}>
                                     <Checkbox
-                                        checked={
-                                            resultSelect.indexOf(item.key) > -1
-                                        }
+                                        checked={isOptionChecked(
+                                            resultSelect,
+                                            item.key,
+                                        )}
                                     />
                                     {item.name}
                                 </MenuItem>
                             );
                         })}
-                        {/* include menu item eproxy_link */}
-                        <MenuItem key="eproxy_link" value="eproxy_link">
-                            <Checkbox
-                                checked={
-                                    resultSelect.indexOf("eproxy_link") > -1
-                                }
-                            />
-                            {transl("eproxy link")}
-                        </MenuItem>
                     </Select>
                 </FormControl>
             </div>

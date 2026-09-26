@@ -2,7 +2,6 @@ import { Card, CardContent } from "@mui/material";
 import React from "react";
 import {
     useAllProjectsSimpleList,
-    useProjectsList,
 } from "../../../../hooks/useProject";
 import transl from "../../../components/translate";
 import ProjectTableItem from "./ProjectTableItem";

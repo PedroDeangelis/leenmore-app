@@ -9,6 +9,10 @@ import FilterSubmission from "./components/FilterSubmission";
 import SubmissionLoop from "./components/SubmissionLoop";
 import { useShareholderEproxy } from "../../../hooks/useShareholder";
 import moment from "moment";
+import {
+    EPROXY_LINK_RESULT,
+    hasCompletedEproxy,
+} from "../../components/resultSentinels";
 
 function SingleSubmission() {
     const { type, id: project_id } = useParams();
@@ -17,6 +21,8 @@ function SingleSubmission() {
         useSubmissionsFilter(type, project_id);
     const [allSubmission, setAllSubmission] = useState([]);
     const [filteredSubmission, setFilteredSubmission] = useState([]);
+    const [showOnlyTheLastSubmission, setShowOnlyTheLastSubmission] =
+        useState(true);
     const {
         data: shareholderWithEproxy,
         isLoading: isShareholderEproxyLoading,
@@ -49,7 +55,7 @@ function SingleSubmission() {
                     return {
                         id: shareholder.id + "_eproxy",
                         shareholder: shareholder,
-                        result: "eproxy_link",
+                        result: EPROXY_LINK_RESULT,
                         shareholder_id: shareholder.id,
                         contact_worker: shareholder.api_recipient_contact,
                         created_at: date,
@@ -66,16 +72,21 @@ function SingleSubmission() {
             );
         }
 
+        // A shareholder who completed an e-proxy has all of their submissions
+        // relabelled to the e-proxy sentinel, which is what makes the
+        // `?result=eproxy_link` deep link match them. The real result is kept
+        // on `original_result` so it is not lost -- the row still records a
+        // genuine judgement that the relabelling would otherwise hide.
         const submissionList = Array.isArray(submission)
-            ? submission.map((item) => {
-                  const sh = item?.shareholder;
-                  const hasCompletedEproxy =
-                      !!sh?.api_recipient_contact &&
-                      !!sh?.api_recipient_completion_date;
-                  return hasCompletedEproxy
-                      ? { ...item, result: "eproxy_link" }
-                      : item;
-              })
+            ? submission.map((item) =>
+                  hasCompletedEproxy(item?.shareholder)
+                      ? {
+                            ...item,
+                            result: EPROXY_LINK_RESULT,
+                            original_result: item.result,
+                        }
+                      : item,
+              )
             : [];
         const combinedSubmission = [
             ...submissionList,
@@ -109,6 +120,10 @@ function SingleSubmission() {
                         submission={allSubmission}
                         projectResults={data?.results}
                         setFilteredSubmission={setFilteredSubmission}
+                        showOnlyTheLastSubmission={showOnlyTheLastSubmission}
+                        setShowOnlyTheLastSubmission={
+                            setShowOnlyTheLastSubmission
+                        }
                     />
 
                     {!filteredSubmission?.length ? (
@@ -119,6 +134,9 @@ function SingleSubmission() {
                         <SubmissionLoop
                             projectResults={data?.results}
                             data={filteredSubmission}
+                            showOnlyTheLastSubmission={
+                                showOnlyTheLastSubmission
+                            }
                         />
                     )}
                 </>

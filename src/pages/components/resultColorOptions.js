@@ -71,12 +71,21 @@ export const resultColorOptions = [
 	},
 ];
 
-export const getTheResultColorOption = (color) => {
-	let colorOBJ = false;
-	resultColorOptions.forEach((value) => {
-		if (value.name == color) {
-			colorOBJ = value;
-		}
-	});
-	return colorOBJ;
-};
+const RESULT_COLORS_BY_NAME = new Map(
+	resultColorOptions.map((option) => [option.name, option]),
+);
+
+const DEFAULT_RESULT_COLOR =
+	RESULT_COLORS_BY_NAME.get("default") ?? resultColorOptions[0];
+
+/**
+ * Look up a colour option by name.
+ *
+ * Always returns an object. This used to return `false` when nothing
+ * matched, which made every caller a latent crash -- OChip reads
+ * `colorObj.background` straight off the result, so an unknown or missing
+ * colour threw a TypeError. That is reachable today: ShareholderTable
+ * leaves `chip` as "" in read-only mode, so `chip.color` is undefined.
+ */
+export const getTheResultColorOption = (color) =>
+	RESULT_COLORS_BY_NAME.get(color) ?? DEFAULT_RESULT_COLOR;

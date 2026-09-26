@@ -1,43 +1,36 @@
 import { TableBody } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import ResultsTableLoopItem from "./ResultsTableLoopItem";
+import {
+    parseProjectResults,
+    sortResultsForDisplay,
+} from "../../../../components/projectResults";
 
 function ResultsTableLoop({ results, setResults, isEdit }) {
-    const [resultsParsed, setResultsParsed] = useState([]);
+    // Derived, not mirrored in state: the previous useState/useEffect pair left a
+    // render where the parsed copy was stale relative to `results`, which was
+    // another way for an edit to land on the wrong slot.
+    const parsed = useMemo(() => parseProjectResults(results), [results]);
 
-    useEffect(() => {
-        if (results) {
-            let resultsTemp = [...results];
-
-            resultsTemp = resultsTemp.map((result, index) => {
-                let resultParsed = JSON.parse(result);
-
-                if (resultParsed?.order === undefined) {
-                    resultParsed = { ...resultParsed, order: index };
-                }
-
-                return resultParsed;
-            });
-
-            setResultsParsed(resultsTemp);
-        }
-    }, [results]);
+    const displayOrder = useMemo(
+        () => sortResultsForDisplay(parsed),
+        [parsed],
+    );
 
     return (
         <TableBody>
-            {resultsParsed
-                .sort((a, b) => a?.order - b?.order)
-                .map((value, key) => {
-                    return (
-                        <ResultsTableLoopItem
-                            key={key}
-                            result={value}
-                            isEdit={isEdit}
-                            setResults={setResults}
-                            index={key}
-                        />
-                    );
-                })}
+            {displayOrder.map((value) => (
+                <ResultsTableLoopItem
+                    // Key and address rows by immutable identity, never by
+                    // display position: `index` is what the item writes to.
+                    key={value.physicalIndex}
+                    result={value}
+                    isEdit={isEdit}
+                    setResults={setResults}
+                    index={value.physicalIndex}
+                    allResults={parsed}
+                />
+            ))}
         </TableBody>
     );
 }

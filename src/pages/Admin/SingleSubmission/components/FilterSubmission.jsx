@@ -11,6 +11,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FilterSubmissionFiltering from "./FilterSubmissionFiltering";
 import FilterSubmissionSorting from "./FilterSubmissionSorting";
 import moment from "moment";
+import { getSubmissionDisplayResult } from "../../../components/resultSentinels";
 
 const getSubmissionDateOnly = (value) => {
     const normalizedDate = String(value ?? "")
@@ -31,19 +32,55 @@ const normalizeSubmissionDate = (value) =>
         .split("T")[0]
         .trim();
 
+const isEsignonRow = (value) => value?.source === "esignon";
+
+// Guarded because moment(undefined) is "now", which would make a row with no
+// date look like the newest one.
+const getSubmissionTimestamp = (value) =>
+    value ? moment(value) : moment.invalid();
+
+// Whether `candidate` is a later submission than `current`, in the same order
+// the `update_shareholder_results` trigger uses to set `shareholder.result`
+// (`date DESC, id DESC`). Matching it is what keeps the "latest only" view in
+// step with the per-result totals on the project page.
+const isLaterSubmission = (candidate, current) => {
+    const candidateDate = getSubmissionTimestamp(candidate.date);
+    const currentDate = getSubmissionTimestamp(current.date);
+
+    // An unparseable date must never win, or one bad row hides the
+    // shareholder's real latest submission.
+    if (!candidateDate.isValid()) return false;
+    if (!currentDate.isValid()) return true;
+
+    const diff = candidateDate.diff(currentDate);
+    if (diff !== 0) return diff > 0;
+
+    // Same timestamp: prefer the real submission over the synthetic e-proxy
+    // row, which carries no note, attachment or worker.
+    if (isEsignonRow(candidate) !== isEsignonRow(current)) {
+        return isEsignonRow(current);
+    }
+
+    // E-proxy ids are "<id>_eproxy" and compare as NaN (never later), which
+    // is fine: a shareholder has at most one e-proxy row.
+    return Number(candidate.id) > Number(current.id);
+};
+
 function FilterSubmission({
     submission,
     setFilteredSubmission,
     projectResults,
+    showOnlyTheLastSubmission,
+    setShowOnlyTheLastSubmission,
 }) {
     const [searchField, setSearchField] = useState("");
-    const [workerSelect, setWorkerSelect] = useState([]);
-    const [dateSelect, setDateSelect] = useState([]);
-    const [resultSelect, setResultSelect] = useState([]);
+    // `null` = every option selected (the default); an array is an explicit
+    // pick, which may be empty. See FilterSubmissionFiltering.
+    const [workerSelect, setWorkerSelect] = useState(null);
+    const [dateSelect, setDateSelect] = useState(null);
+    const [resultSelect, setResultSelect] = useState(null);
     const [sharesTotalSort, setSharesTotalSort] = useState(false);
     const [dateSort, setDateSort] = useState("desc");
-    const [showOnlyTheLastSubmission, setShowOnlyTheLastSubmission] =
-        useState(false);
 
     const urlParams = new URLSearchParams(window.location.search);
     const result = urlParams.get("result");
@@ -60,6 +97,41 @@ function FilterSubmission({
 
     const updateFilterSubmission = useCallback(() => {
         var submissionCopy = Array.isArray(submission) ? [...submission] : [];
+
+        if (showOnlyTheLastSubmission) {
+            // Keep each shareholder's actual latest row. This runs BEFORE the
+            // other filters on purpose: running it after the result filter
+            // picked the latest row *with that result*, so a shareholder who
+            // was 유보 once and later moved to 거부 still showed (and was
+            // totalled) under 유보.
+            //
+            // This used to additionally require
+            // `value.result === value.shareholder.result`, relying on
+            // `shareholder.result` being a denormalized copy of the latest
+            // submission's result. That dropped every e-proxy row: those carry
+            // the synthetic `EPROXY_LINK_RESULT` sentinel while
+            // `shareholder.result` holds a physical index (or null), so the two
+            // could never be equal and the list came back empty.
+            const latestByShareholder = new Map();
+
+            submissionCopy.forEach((value) => {
+                const shareholderId = value?.shareholder?.id;
+                if (shareholderId == null) return;
+
+                const current = latestByShareholder.get(shareholderId);
+                if (!current || isLaterSubmission(value, current)) {
+                    latestByShareholder.set(shareholderId, value);
+                }
+            });
+
+            const kept = new Set(
+                [...latestByShareholder.values()].map((value) => value.id),
+            );
+
+            submissionCopy = submissionCopy.filter((value) =>
+                kept.has(value.id),
+            );
+        }
 
         submissionCopy = submissionCopy
             .filter(
@@ -81,19 +153,27 @@ function FilterSubmission({
                           : [];
 
                 return (
-                    !workerSelect?.length ||
+                    workerSelect == null ||
                     workerNames.some((worker) => workerSelect.includes(worker))
                 );
             })
             .filter((value) => {
                 return (
-                    !dateSelect?.length ||
+                    dateSelect == null ||
                     dateSelect.includes(normalizeSubmissionDate(value.date))
                 );
             })
             .filter((value) => {
+                // Filter on the result the row is shown with, so a filtered
+                // list never holds a row with a different result chip.
                 return (
-                    !resultSelect?.length || resultSelect.includes(value.result)
+                    resultSelect == null ||
+                    resultSelect.includes(
+                        getSubmissionDisplayResult(
+                            value,
+                            showOnlyTheLastSubmission,
+                        ),
+                    )
                 );
             });
 
@@ -142,21 +222,6 @@ function FilterSubmission({
             });
         }
 
-        if (showOnlyTheLastSubmission) {
-            var shareholders = [];
-            submissionCopy = submissionCopy.filter((value) => {
-                if (
-                    shareholders.includes(value.shareholder.id) ||
-                    value.result !== value.shareholder.result
-                ) {
-                    return false;
-                }
-
-                shareholders.push(value.shareholder.id);
-                return true;
-            });
-        }
-
         setFilteredSubmission([...submissionCopy]);
     }, [
         dateSelect,
@@ -185,6 +250,7 @@ function FilterSubmission({
                 resultSelect={resultSelect}
                 setResultSelect={setResultSelect}
                 projectResults={projectResults}
+                showOnlyTheLastSubmission={showOnlyTheLastSubmission}
             />
             <FilterSubmissionSorting
                 sharesTotalSort={sharesTotalSort}

@@ -18,17 +18,6 @@ function SubmissionLoopEsignonItem({ project, shareholderValue, created_at }) {
     const [active, setActive] = useState(false);
     const contentEl = useRef();
 
-    const workers = Array.isArray(shareholderValue?.user)
-        ? shareholderValue.user.filter(Boolean)
-        : shareholderValue?.user
-          ? [shareholderValue.user]
-          : [];
-
-    const workerSummary =
-        workers.length > 1
-            ? `${workers[0]} +${workers.length - 1}`
-            : workers[0] || "-";
-
     const completionDate =
         shareholderValue?.api_recipient_completion_date || created_at;
 
@@ -55,9 +44,9 @@ function SubmissionLoopEsignonItem({ project, shareholderValue, created_at }) {
                 <p className="w-2/12">
                     {shareholderValue?.shares_total || "-"}
                 </p>
-                <p className="w-1/12">{workerSummary}</p>
+                <p className="w-1/12 text-xs">{transl("Source")}: Esignon</p>
                 <p className="w-1/12 text-xs text-slate-600">
-                    {formatDate(created_at, "YY/MM/DD")}
+                    {formatDate(created_at, "YY/MM/DD HH:mm")}
                 </p>
                 <p className="w-2/12">{project || "-"}</p>
                 <div className="w-2/12 text-center relative flex justify-end items-center">
@@ -126,12 +115,6 @@ function SubmissionLoopEsignonItem({ project, shareholderValue, created_at }) {
                         </p>
                     </div>
                     <div>
-                        <p className="text-sm text-slate-600 mb-3">
-                            <strong className="mr-2 uppercase text-xs">
-                                {transl("Workers")}:
-                            </strong>
-                            {workers.length ? workers.join(", ") : "-"}
-                        </p>
                         <p className="text-sm text-slate-600 mb-3">
                             <strong className="mr-2 uppercase text-xs">
                                 {transl("Source")}:

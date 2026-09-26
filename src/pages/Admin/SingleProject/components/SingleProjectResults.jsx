@@ -12,7 +12,7 @@ import {
     Checkbox,
     CircularProgress,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import OChip from "../../../components/OChip";
 import transl from "../../../components/translate";
 import ProjectWorkspaceLoopItem from "../../Dashboard/components/ProjectWorkspaceLoopItem";
@@ -22,13 +22,9 @@ import { useProjecUpdate } from "../../../../hooks/useProject";
 import { toast } from "react-toastify";
 import ResultsDragnDrog from "./results/ResultsDragnDrog";
 import RealTimeResults from "./RealTimeResults";
+import { validateProjectResults } from "../../../components/projectResults";
 
-function SingleProjectResults({
-    results,
-    project,
-    projectShareholders,
-    isShareholdersPending,
-}) {
+function SingleProjectResults({ results, project, tally, isTallyLoading }) {
     const [isEdit, setIsEdit] = useState(false);
     const [isOrderning, setIsOrderning] = useState(false);
     const updateProjectMutation = useProjecUpdate();
@@ -39,7 +35,19 @@ function SingleProjectResults({
 
     const [resultsTemp, setResultsTemp] = useState([...results]);
 
+    // Names are the drag-and-drop matching key and appear in every export, so a
+    // duplicate or blank name must never reach the database.
+    const validationError = useMemo(
+        () => validateProjectResults(resultsTemp, transl),
+        [resultsTemp],
+    );
+
     const handleResultsSave = () => {
+        if (validationError) {
+            toast.error(validationError, { position: "top-right" });
+            return;
+        }
+
         const resultsWithOrder = resultsTemp.map((item, index) => {
             const parsed = typeof item === "string" ? JSON.parse(item) : item;
             return JSON.stringify({
@@ -73,13 +81,13 @@ function SingleProjectResults({
     };
     return (
         <div className="grid grid-cols-3 mb-4 gap-4">
-            {isShareholdersPending ? (
+            {isTallyLoading ? (
                 <div className="py-8 text-center col-span-2">
                     <p className="mb-10">{transl("Loading shareholders")}...</p>
                     <CircularProgress />
                 </div>
             ) : (
-                <RealTimeResults project={project} />
+                <RealTimeResults project={project} tally={tally} />
             )}
             {isOrderning ? (
                 <ResultsDragnDrog
@@ -115,6 +123,8 @@ function SingleProjectResults({
                                                 size="small"
                                                 variant="contained"
                                                 sx={{ marginLeft: "10px" }}
+                                                disabled={!!validationError}
+                                                title={validationError}
                                                 onClick={handleResultsSave}
                                             >
                                                 {transl("save")}

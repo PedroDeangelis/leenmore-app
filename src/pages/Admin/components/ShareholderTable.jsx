@@ -208,9 +208,9 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {list
-                            .slice(0, 500)
+                        {[...list]
                             .sort((a, b) => a.no - b.no)
+                            .slice(0, 500)
                             .map((value, key) => {
                                 var chip = "";
                                 if (isEditble && projectResult[value.result]) {
@@ -281,7 +281,7 @@ function ShareholderTable({ list, isEditble, projectResult }) {
                                         </TableCell>
                                         <TableCell>{value.address}</TableCell>
                                         <TableCell>
-                                            {value.user.map((value) => (
+                                            {(value.user ?? []).map((value) => (
                                                 <Chip
                                                     key={value}
                                                     label={value}

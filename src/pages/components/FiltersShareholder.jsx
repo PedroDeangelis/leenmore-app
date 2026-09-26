@@ -28,7 +28,8 @@ function FiltersShareholder({ listOfResults, originalShareholdesList }) {
     const [selectResult, setSelectResult] = useState("all");
 
     const sortList = (sortValue) => {
-        var sortedList = originalShareholdesList.sort((a, b) => {
+        // Copy first: .sort() mutates, and this array is the react-query cache.
+    var sortedList = [...originalShareholdesList].sort((a, b) => {
             if (sortValue === "shares_total") {
                 return (
                     parseInt(a[sortValue]?.replaceAll(",", "")) -

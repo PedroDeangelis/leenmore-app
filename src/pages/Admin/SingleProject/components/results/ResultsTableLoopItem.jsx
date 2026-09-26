@@ -11,9 +11,19 @@ import {
 import React, { useEffect, useState } from "react";
 import OChip from "../../../../components/OChip";
 import { resultColorOptions } from "../../../../components/resultColorOptions";
+import {
+	findDuplicateName,
+	serializeProjectResult,
+} from "../../../../components/projectResults";
 import transl from "../../../../components/translate";
 
-function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
+function ResultsTableLoopItem({
+	isEdit,
+	result,
+	setResults,
+	index,
+	allResults,
+}) {
 	const [contactRequired, setContactRequired] = useState(
 		result?.contactRequired
 	);
@@ -21,19 +31,38 @@ function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
 		result?.attachmentRequired
 	);
 	const [name, setName] = useState(result?.name);
-	const [colorSelect, setColorSelect] = useState();
+	const [colorSelect, setColorSelect] = useState(result?.color);
+	const [nameError, setNameError] = useState("");
 	const resultColors = resultColorOptions;
 
 	const handleChange = () => {
 		setResults((prev) => {
+			// Serialize through the shared helper so this single-row write and
+			// serializeProjectResults() can never drift in key order or boolean
+			// coercion -- the equality check below depends on that.
+			const next = serializeProjectResult(
+				{
+					name: name,
+					color: colorSelect,
+					contactRequired: contactRequired,
+					attachmentRequired: attachmentRequired,
+					// Backfill legacy rows so the key is never dropped.
+					order: result?.order,
+				},
+				index
+			);
+
+			// Bail out when nothing actually changed. Returning the SAME array
+			// reference makes React skip the re-render; allocating a new one on
+			// every pass is what drove the "Maximum update depth exceeded" loop,
+			// because each new array handed every sibling row fresh `result` and
+			// `allResults` identities.
+			if (prev[index] === next) return prev;
+
 			const newResults = [...prev];
-			newResults[index] = JSON.stringify({
-				name: name,
-				color: colorSelect,
-				contactRequired: contactRequired,
-				attachmentRequired: attachmentRequired,
-				order: result?.order,
-			});
+			// `index` is the PHYSICAL index in project.results, never the display
+			// position, so this write can never clobber a sibling result.
+			newResults[index] = next;
 			return newResults;
 		});
 	};
@@ -42,13 +71,49 @@ function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
 		setColorSelect(e.target.value);
 	};
 
-	useEffect(() => {
-		handleChange();
-	}, [name, colorSelect, contactRequired, attachmentRequired]);
+	// Depend on a PRIMITIVE digest of the sibling names, not on the `allResults`
+	// array identity. The parent rebuilds that array (via parseProjectResults)
+	// on every write, so an identity dep re-ran this effect in every row on
+	// every pass -- the setNameError below is the line React named in
+	// "Maximum update depth exceeded".
+	const siblingNames = (allResults ?? [])
+		.map((item) => `${item?.physicalIndex}:${item?.name ?? ""}`)
+		.join("\u0000");
 
 	useEffect(() => {
-		setColorSelect(result?.color);
-	}, []);
+		const clash = findDuplicateName(allResults ?? [], name, index);
+
+		let message = "";
+		if (!String(name ?? "").trim()) {
+			message = transl("Result name cannot be empty.");
+		} else if (clash) {
+			message = transl("A result with this name already exists.");
+		}
+
+		// Only write when the message actually changes: setting identical state
+		// still schedules a render pass.
+		setNameError((prev) => (prev === message ? prev : message));
+		// `allResults` is read above but deliberately not a dep -- siblingNames is
+		// its stable primitive projection.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [name, siblingNames, index]);
+
+	// handleChange is intentionally omitted from the deps: it is recreated on
+	// every render, and this effect must fire only when an edited field changes.
+	// Gated on isEdit -- a read-only row must never write back to the parent.
+	useEffect(() => {
+		if (!isEdit) return;
+		handleChange();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isEdit, name, colorSelect, contactRequired, attachmentRequired]);
+
+	// Resync when this row is pointed at a different result. Rows are now keyed
+	// by physical index, so a re-sort can hand this component a new `result`
+	// without remounting it -- a [] dep list would keep the stale color.
+	// Guarded so an unchanged colour cannot retrigger the write effect above.
+	useEffect(() => {
+		setColorSelect((prev) => (prev === result?.color ? prev : result?.color));
+	}, [result?.color]);
 
 	return (
 		<TableRow>
@@ -66,7 +131,6 @@ function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
 							checked={contactRequired}
 							onChange={(e) => {
 								setContactRequired(e.target.checked);
-								handleChange();
 							}}
 						/>
 					</>
@@ -92,7 +156,6 @@ function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
 							checked={attachmentRequired}
 							onChange={(e) => {
 								setAttachmentRequired(e.target.checked);
-								handleChange();
 							}}
 						/>
 					</>
@@ -108,6 +171,8 @@ function ResultsTableLoopItem({ isEdit, result, setResults, index }) {
 				{isEdit ? (
 					<TextField
 						value={name}
+						error={!!nameError}
+						helperText={nameError}
 						onChange={(e) => {
 							setName(e.target.value);
 						}}

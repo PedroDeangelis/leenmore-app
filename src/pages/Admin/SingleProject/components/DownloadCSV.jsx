@@ -8,7 +8,11 @@ import { toast } from "react-toastify";
 import getDownloadCSV from "./getDownloadCSV";
 import transl from "../../../components/translate";
 import sanitizeFilename from "../../../components/sanitizeFilename";
-import { useMissingShareholdersFromEsignon } from "../../../../hooks/useShareholder";
+import {
+    useMissingShareholdersFromEsignon,
+    fetchShareholdersFromProject,
+    SHAREHOLDER_TABLE_COLUMNS,
+} from "../../../../hooks/useShareholder";
 
 const MIME_XLSX =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -263,7 +267,7 @@ const saveZipFallback = async ({
     saveAs(zipBlob, `${filename}.zip`);
 };
 
-function DownloadCSV({ project, projectShareholders }) {
+function DownloadCSV({ project }) {
     const [isExporting, setIsExporting] = useState(false);
     const {
         isLoading: isMissingShareholdersLoading,
@@ -291,6 +295,14 @@ function DownloadCSV({ project, projectShareholders }) {
                     );
                 }
             }
+
+            // Fetched here rather than on page load: this is the only
+            // consumer that needs every shareholder row, and draining 62k of
+            // them up front was what made the project page take minutes.
+            const projectShareholders = await fetchShareholdersFromProject({
+                project_id: project.id,
+                columns: SHAREHOLDER_TABLE_COLUMNS,
+            });
 
             const downloadData = getDownloadCSV({
                 project,

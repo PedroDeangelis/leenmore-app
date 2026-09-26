@@ -79,7 +79,7 @@ function FilterSubmissionSorting({
                     )}
                 </div>
             </div>
-            <div className="p-2 flex items-start">
+            <div className="p-2 flex items-center">
                 <Checkbox
                     checked={showOnlyTheLastSubmission}
                     onChange={(event) => {

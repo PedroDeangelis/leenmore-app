@@ -1,17 +1,34 @@
 import formatNumber from "../../components/formatNumber";
 import { getTheResultColorOption } from "../../components/resultColorOptions";
 import transl from "../../components/translate";
+import {
+    PROJECT_TALLY_BUCKET_EV,
+    PROJECT_TALLY_BUCKET_EPROXY,
+    PROJECT_TALLY_BUCKET_NULL,
+} from "./shareholderTallyBuckets";
 
-export default function getPercentageRateForShareholder(
-    shareholders,
-    results,
-    shares_target,
-) {
-    if (!shareholders?.length) return null;
-    const normalizeOrder = (orderValue, fallbackValue) => {
-        const numericOrder = Number(orderValue);
-        return Number.isFinite(numericOrder) ? numericOrder : fallbackValue;
-    };
+const normalizeOrder = (orderValue, fallbackValue) => {
+    const numericOrder = Number(orderValue);
+    return Number.isFinite(numericOrder) ? numericOrder : fallbackValue;
+};
+
+const getSyntheticLabels = () => ({
+    eletronicVoteLabel: transl("eletronic vote"),
+    eproxyLinkLabel: transl("eproxy link"),
+});
+
+/**
+ * Shared presentation half, used by both the raw-array and the server-tally
+ * entry points below.
+ *
+ * `totalsByResult` maps a result key to a share total already truncated per
+ * row. Keys are either the raw `result` string (matched against the PHYSICAL
+ * INDEX of the result in `results`) or one of the two synthetic labels
+ * (matched by name). A key matching neither -- notably "null" -- contributes
+ * nothing, which is how null-result shareholders have always been excluded.
+ */
+function buildResultRates(totalsByResult, results, shares_target) {
+    const { eletronicVoteLabel, eproxyLinkLabel } = getSyntheticLabels();
 
     var resultList = results.map((result, index) => {
         const parsedResult = JSON.parse(result);
@@ -22,15 +39,15 @@ export default function getPercentageRateForShareholder(
         };
     });
 
-    const eletronicVoteLabel = transl("eletronic vote");
-    const eproxyLinkLabel = transl("eproxy link");
-
     resultList.push({
         name: eletronicVoteLabel,
         color: "b&w",
         order: 9999999999,
     });
 
+    // Order matters: greenOrders is read AFTER the e-vote row is pushed but
+    // BEFORE the e-proxy row, so the e-proxy row sorts just after the last
+    // green option. Reordering these three statements moves it in the output.
     const greenOrders = resultList
         .map((item, index) => ({
             color: item?.color,
@@ -49,63 +66,21 @@ export default function getPercentageRateForShareholder(
         order: eproxyOrder,
     });
 
-    let allResults = [];
     let finalTotal = [];
     let colorTotal = {};
 
-    shareholders.forEach((item) => {
-        allResults.push({
-            result: item.result,
-            shares: Number(item.shares.replace(/,/g, "")),
-        });
-    });
-
-    const hasEproxyLink = (shareholder) =>
-        shareholder.api_recipient_contact &&
-        shareholder.api_recipient_completion_date;
-
-    const getResultColor = (resultValue) => {
-        const index = Number.parseInt(resultValue, 10);
-        if (!Number.isFinite(index)) {
-            return null;
-        }
-        return resultList[index]?.color ?? null;
-    };
-
-    allResults = shareholders.map((item) => {
-        const isGreenResult = getResultColor(item.result) === "green";
-        let result = item.result;
-
-        if (item.eletronic_voting?.length) {
-            result = eletronicVoteLabel;
-        } else if (hasEproxyLink(item)) {
-            result = eproxyLinkLabel;
-        }
-
-        return {
-            result: result,
-            shares: Number(item.shares.replace(/,/g, "")),
-            total: 0,
-        };
-    });
-
     resultList.forEach((item, key) => {
-        let total = 0;
-        allResults.forEach((item2) => {
-            if (key == item2.result) {
-                total += parseInt(item2.shares);
-            } else if (
-                item2.result == eletronicVoteLabel &&
-                item.name == eletronicVoteLabel
-            ) {
-                total += parseInt(item2.shares);
-            } else if (
-                item2.result == eproxyLinkLabel &&
-                item.name == eproxyLinkLabel
-            ) {
-                total += parseInt(item2.shares);
-            }
-        });
+        // Matches the original semantics exactly: a normal result matches on
+        // physical index, while the two synthetic rows match on their label.
+        let total = totalsByResult.get(String(key)) ?? 0;
+
+        if (item.name === eletronicVoteLabel) {
+            total += totalsByResult.get(eletronicVoteLabel) ?? 0;
+        }
+        if (item.name === eproxyLinkLabel) {
+            total += totalsByResult.get(eproxyLinkLabel) ?? 0;
+        }
+
         finalTotal.push({
             result: key,
             name: item.name,
@@ -164,4 +139,86 @@ export default function getPercentageRateForShareholder(
         percentage: ((totalTotal / shares_target) * 100).toFixed(2),
         colorTotal: colorTotal,
     };
+}
+
+/**
+ * Tally from a raw shareholder array. Still used by the dashboard, which holds
+ * the rows in memory already. Prefer getPercentageRateFromTally where only the
+ * totals are needed -- it does not require downloading every row.
+ */
+export default function getPercentageRateForShareholder(
+    shareholders,
+    results,
+    shares_target,
+) {
+    if (!shareholders?.length) return null;
+
+    const { eletronicVoteLabel, eproxyLinkLabel } = getSyntheticLabels();
+
+    // `shares` is a text column holding comma-formatted numbers, and a few rows
+    // are null -- an unguarded .replace() here blanked the whole results panel.
+    const parseShares = (value) =>
+        Number(String(value ?? "").replace(/,/g, "")) || 0;
+
+    const hasEproxyLink = (shareholder) =>
+        shareholder.api_recipient_contact &&
+        shareholder.api_recipient_completion_date;
+
+    // Bucket once, then look up per result. The previous nested forEach was
+    // resultList.length * shareholders.length (~300k iterations at 30k rows).
+    const totalsByResult = new Map();
+    shareholders.forEach((item) => {
+        let result = item.result;
+
+        if (item.eletronic_voting?.length) {
+            result = eletronicVoteLabel;
+        } else if (hasEproxyLink(item)) {
+            result = eproxyLinkLabel;
+        }
+
+        const key = String(result);
+        totalsByResult.set(
+            key,
+            (totalsByResult.get(key) ?? 0) + Math.trunc(parseShares(item.shares)),
+        );
+    });
+
+    return buildResultRates(totalsByResult, results, shares_target);
+}
+
+/**
+ * Same output, computed from the server-side aggregate instead of a full
+ * shareholder download. See useProjectShareholderTally.
+ */
+export function getPercentageRateFromTally(tally, results, shares_target) {
+    if (!tally?.buckets?.size) return null;
+
+    const { eletronicVoteLabel, eproxyLinkLabel } = getSyntheticLabels();
+
+    const totalsByResult = new Map();
+    tally.buckets.forEach((value, bucket) => {
+        let key;
+
+        if (bucket === PROJECT_TALLY_BUCKET_EV) {
+            key = eletronicVoteLabel;
+        } else if (bucket === PROJECT_TALLY_BUCKET_EPROXY) {
+            key = eproxyLinkLabel;
+        } else if (bucket === PROJECT_TALLY_BUCKET_NULL) {
+            // Deliberately a key nothing looks up. String(null) === "null" was
+            // what the array version produced, and buildResultRates only ever
+            // reads "0".."n" and the two labels -- so shareholders with no
+            // result have never counted toward the totals. Mapping this to a
+            // real row would change every displayed percentage.
+            key = "null";
+        } else {
+            key = bucket;
+        }
+
+        totalsByResult.set(
+            key,
+            (totalsByResult.get(key) ?? 0) + value.totalShares,
+        );
+    });
+
+    return buildResultRates(totalsByResult, results, shares_target);
 }

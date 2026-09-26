@@ -34,8 +34,9 @@ function FormResultCreator({ formResultsList, setFormResultsList }) {
         setResultError(false);
 
         if (formResultsList) {
+            const candidate = String(newColor ?? "").trim().toLowerCase();
             formResultsList.forEach((value) => {
-                if (value.name == newColor) {
+                if (String(value.name ?? "").trim().toLowerCase() === candidate) {
                     setResultError(
                         transl(
                             `The result ${newColor} is already added, try a different one.`
@@ -57,6 +58,8 @@ function FormResultCreator({ formResultsList, setFormResultsList }) {
                 color: resultItem,
                 contactRequired: contactCheckbox,
                 attachmentRequired: attachmentCheckbox,
+                // Physical index at insertion time; the list is append-only here.
+                order: prev.length,
             },
         ]);
     };

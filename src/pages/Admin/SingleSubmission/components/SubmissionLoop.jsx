@@ -4,10 +4,11 @@ import SubmissionLoopEsignonItem from "./SubmissionLoopEsignonItem";
 import SubmissionLoopItem from "./SubmissionLoopItem";
 import SubmissionInfo from "./SubmissionInfo";
 import ReceiptAttachmentPreview from "../../ReceiptsByProjectAndUser/components/ReceiptAttachmentPreview";
+import { getSubmissionDisplayResult } from "../../../components/resultSentinels";
 
 const headerTH = "py-6 text-sm tracking-wider text-gray-500";
 
-function SubmissionLoop({ data, projectResults }) {
+function SubmissionLoop({ data, projectResults, showOnlyTheLastSubmission }) {
     const [limitDisplay, setLimitDisplay] = useState(20);
     const lastSubmissionRef = useRef();
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -35,7 +36,7 @@ function SubmissionLoop({ data, projectResults }) {
 
     return (
         <>
-            <div className="mb-10 flex itemms-stretch gap-6">
+            <div className="mb-10 flex items-stretch gap-6">
                 <div className="w-full">
                     <div className="mb-3 rounded-lg bg-white shadow-card flex ">
                         <span className={`${headerTH} w-2/12 pl-6`}>
@@ -63,7 +64,10 @@ function SubmissionLoop({ data, projectResults }) {
                     <SubmissionInfo data={data} />
                     {data?.length ? (
                         data.slice(0, limitDisplay).map((value) => {
-                            let result = value.result;
+                            let result = getSubmissionDisplayResult(
+                                value,
+                                showOnlyTheLastSubmission,
+                            );
 
                             if (value?.source === "esignon") {
                                 return (
@@ -98,6 +102,7 @@ function SubmissionLoop({ data, projectResults }) {
                                     date={value.date}
                                     created_at={value.created_at}
                                     result={result}
+                                    originalResult={value?.original_result}
                                     note={value.note}
                                     files={value.files}
                                     privacyConsentFile={

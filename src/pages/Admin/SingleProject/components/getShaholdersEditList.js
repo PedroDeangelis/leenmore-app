@@ -18,7 +18,7 @@ export default function getShaholdersEditList(shareholders) {
             element.contact_info_2,
             element.database,
             element.contact_worker,
-            element.user.join("/"),
+            (element.user ?? []).join("/"),
             element.prev_comment,
             element.prev_result,
             element.prev_note,

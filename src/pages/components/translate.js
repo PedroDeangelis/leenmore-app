@@ -315,6 +315,29 @@ export default function transl(char) {
         "date to": "날짜 종료",
         "min amount": "최소 금액",
         "max amount": "최대 금액",
+        source: "출처",
+        "shareholder search": "주주 조회",
+        "date of birth code or registration number":
+            "생년월일 6자리 또는 실명번호",
+        "enter a date of birth code or registration number":
+            "생년월일 6자리 또는 실명번호를 입력하세요",
+        "if a registration number is not found, try the 6-digit date of birth code":
+            "실명번호로 찾을 수 없으면 생년월일 6자리로 검색해 보세요",
+        "only the first 1000 rows are shown. search by registration number to narrow the results.":
+            "처음 1000개 행만 표시됩니다. 실명번호로 검색하여 결과를 좁혀주세요.",
+        "no shareholders found": "주주를 찾을 수 없습니다",
+        "error loading shareholders": "주주를 불러오는 중 오류가 발생했습니다",
+        "error loading submissions": "활동 내역을 불러오는 중 오류가 발생했습니다",
+        "search results": "검색 결과",
+        "back to results": "검색 결과로 돌아가기",
+        "number of projects": "프로젝트 수",
+        "shares across all projects": "전체 프로젝트 주식수 합계",
+        "result summary": "판단 요약",
+        "no result": "판단 없음",
+        "submission history": "활동 내역",
+        "no submissions": "활동 내역 없음",
+        "contact info 2": "주소서치 2",
+        "last note": "최근 특이사항",
     };
 
     return map[key] ? map[key] : char;

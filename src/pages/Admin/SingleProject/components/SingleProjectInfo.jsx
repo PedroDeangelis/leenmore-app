@@ -24,8 +24,6 @@ function SingleProjectInfo({
     endDate,
     project,
     hasSubmission,
-    isShareholdersPending,
-    projectShareholders,
 }) {
     const downloadZipFolderMutation = useDownloadZipFolder();
     const checkDownloadFolder = useSelectDownloadFolder();
@@ -198,14 +196,7 @@ function SingleProjectInfo({
                     )}
                 </Card>
                 <Card className="flex items-center text-center justify-center">
-                    {isShareholdersPending ? (
-                        <CircularProgress />
-                    ) : (
-                        <DownloadCSV
-                            project={project}
-                            projectShareholders={projectShareholders}
-                        />
-                    )}
+                    <DownloadCSV project={project} />
                 </Card>
                 <Card className="flex items-center text-center justify-center">
                     {hasSubmission ? (

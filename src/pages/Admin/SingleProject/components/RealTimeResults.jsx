@@ -6,7 +6,7 @@ import {
     IconButton,
     TextField,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import transl from "../../../components/translate";
 import EditIcon from "@mui/icons-material/Edit";
 import { useProjecUpdate } from "../../../../hooks/useProject";
@@ -14,16 +14,18 @@ import { toast } from "react-toastify";
 import { rgba } from "polished";
 import { Link } from "react-router-dom";
 import supabase from "../../../../utils/supabaseClient";
-import getPercentageRateForShareholder from "../../components/getPercentageRateForShareholder";
+import { getPercentageRateFromTally } from "../../components/getPercentageRateForShareholder";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import downloadExcelNotes from "./downloadExcelNotes";
+import {
+    EPROXY_LINK_RESULT,
+    isEproxyLinkResult,
+} from "../../../components/resultSentinels";
 
-function RealTimeResults({ project }) {
+function RealTimeResults({ project, tally }) {
     const [isEdit, setIsEdit] = useState(false);
     const [sharesIssued, setSharesIssued] = useState(project.shares_issued);
     const [sharesTarget, setSharesTarget] = useState(project.shares_target);
-    const [resultsRate, setResultsRate] = useState([]);
-    const [shareholderResults, setShareholderResults] = useState([]);
     const updateProjectMutation = useProjecUpdate();
 
     function formatNumber(value) {
@@ -74,23 +76,22 @@ function RealTimeResults({ project }) {
         setSharesTarget(formattedValue);
     };
 
-    useEffect(() => {
-        if (shareholderResults.length === 0) {
-            setShareholderResults(project.shareholder);
-        }
-    }, [project]);
+    // Derived, not stored. This was a useEffect that called setResultsRate
+    // with `commit_timestamp: Date.now()` spliced in -- a guaranteed-new
+    // object identity on every commit, so React could never bail out and the
+    // effect re-ran itself through its own `project` dependency. It also
+    // re-aggregated every shareholder each pass.
+    //
+    // Keyed on the fields actually consumed rather than the whole `project`
+    // object, so an unrelated project field changing does not recompute.
+    const resultsRate = useMemo(() => {
+        // `shares_target` is a nullable text column; an unguarded .replace()
+        // here threw and blanked the whole panel.
+        const target =
+            Number(String(project.shares_target ?? "").replace(/,/g, "")) || 0;
 
-    useEffect(() => {
-        const newRate = getPercentageRateForShareholder(
-            shareholderResults,
-            project.results,
-            Number(project.shares_target.replace(/,/g, "")),
-        );
-
-        if (newRate) {
-            setResultsRate({ commit_timestamp: Date.now(), ...newRate });
-        }
-    }, [shareholderResults, project]);
+        return getPercentageRateFromTally(tally, project.results, target);
+    }, [tally, project.results, project.shares_target]);
 
     return (
         <Card className="col-span-2">
@@ -213,10 +214,15 @@ function RealTimeResults({ project }) {
                 </div>
                 {resultsRate &&
                     resultsRate?.results?.map((result) => {
+                        // `result.name` is a translated label, so comparing it
+                        // to a hardcoded Korean literal broke under any other
+                        // locale or a reworded translation.
+                        const isEproxyRow = isEproxyLinkResult(result.name);
+
                         let linkResultGetValue = result.result;
 
-                        if (result.name === "위임(전자위임)") {
-                            linkResultGetValue = "eproxy_link";
+                        if (isEproxyRow) {
+                            linkResultGetValue = EPROXY_LINK_RESULT;
                         }
 
                         return (
@@ -235,7 +241,7 @@ function RealTimeResults({ project }) {
                                         to={`/dashboard/submission/project/${project.id}?result=${linkResultGetValue}`}
                                     >
                                         <span
-                                            className={`${(result.name === "위임(전자위임)" && "font-bold") || ""}`}
+                                            className={`${(isEproxyRow && "font-bold") || ""}`}
                                         >
                                             {result.name}
                                         </span>

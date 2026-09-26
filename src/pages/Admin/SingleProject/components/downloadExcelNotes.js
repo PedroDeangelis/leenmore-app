@@ -32,7 +32,10 @@ const downloadExcelNotes = async (
     title,
     deadline
 ) => {
-    if (resultsRate?.results?.length == 0) {
+    // Covers null (no shareholders -- getPercentageRateForShareholder
+    // returns null) as well as an empty list. The previous `== 0` check
+    // let null through to `resultsRate.results.forEach` below.
+    if (!resultsRate?.results?.length) {
         alert("No results to download");
         return;
     }

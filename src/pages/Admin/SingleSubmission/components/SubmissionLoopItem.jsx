@@ -6,6 +6,11 @@ import transl from "../../../components/translate";
 import getShareholderSex from "../../../Worker/components/getShareholderSex";
 import EditIcon from "@mui/icons-material/Edit";
 import { Link } from "react-router-dom";
+import {
+    getEproxyLinkLabel,
+    hasCompletedEproxy,
+    isEproxyLinkResult,
+} from "../../../components/resultSentinels";
 
 function SubmissionLoopItem({
     project,
@@ -14,6 +19,7 @@ function SubmissionLoopItem({
     date,
     created_at,
     result,
+    originalResult,
     projectResult,
     note,
     files,
@@ -31,14 +37,30 @@ function SubmissionLoopItem({
     privacyConsentFile,
 }) {
     let chip = false;
+    let isShareholderHasEproxy = hasCompletedEproxy(shareholderValue);
+    let chipNameOrigem = "";
+    let isItOnlyEproxy = false;
+    let isEproxyLinkResultValue = isEproxyLinkResult(result);
 
-    if (result === "eproxy_link") {
+    // The result the worker actually submitted: `original_result` for rows
+    // relabelled to the e-proxy sentinel, otherwise `result` itself.
+    const submittedResult =
+        originalResult !== undefined ? originalResult : result;
+
+    if (submittedResult && projectResult?.[submittedResult] != null) {
+        chip = JSON.parse(projectResult[submittedResult]);
+        chipNameOrigem = chip?.name || "";
+    }
+
+    if (isEproxyLinkResultValue) {
         chip = {
-            name: transl("eproxy link"),
+            name: getEproxyLinkLabel(),
             color: "green",
         };
+        isItOnlyEproxy = true;
+    } else if (result && typeof projectResult?.[result] !== "undefined") {
     } else {
-        chip = result ? JSON.parse(projectResult[result]) : false;
+        chip = false;
     }
 
     const [active, setActive] = useState(false);
@@ -81,7 +103,10 @@ function SubmissionLoopItem({
         file?.split("/").filter(Boolean).pop() || file || "";
 
     return (
-        <div className="relative p-4 mb-3  overflow-hidden rounded-lg bg-white shadow-md transition-all hover:shadow-lg ">
+        <div
+            id={`submission-${submissionID}`}
+            className="relative p-4 mb-3  overflow-hidden rounded-lg bg-white shadow-md transition-all hover:shadow-lg "
+        >
             <div
                 className="flex justify-between items-center cursor-pointer flex-wrap"
                 onClick={() => {
@@ -108,7 +133,26 @@ function SubmissionLoopItem({
                     <span className="text-xs text-slate-500 mr-2">
                         {moment(date).format("YY/MM/DD")}
                     </span>
-                    {chip && <OChip color={chip.color}>{chip.name}</OChip>}
+
+                    {chip && (
+                        <div
+                            className={
+                                isShareholderHasEproxy ? "relative -top-3" : ""
+                            }
+                        >
+                            <OChip color={chip.color}>{chip.name}</OChip>
+                            {isShareholderHasEproxy && (
+                                <p
+                                    className="text-xs font-bold absolute -bottom-5 left-1 text-center right-1 whitespace-nowrap"
+                                    style={{ color: "#5a0713" }}
+                                >
+                                    {isItOnlyEproxy
+                                        ? "위임(전자위임)"
+                                        : chipNameOrigem}
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
             <div
@@ -265,6 +309,12 @@ function SubmissionLoopItem({
                             </div>
                         )}
                         <div>
+                            <p className="text-sm  text-slate-600 mb-3">
+                                <strong className="mr-2 uppercase text-xs">
+                                    {transl("Result")}:
+                                </strong>
+                                {chipNameOrigem}
+                            </p>
                             <p className="text-sm  text-slate-600 mb-2">
                                 {transl("Note")}
                             </p>

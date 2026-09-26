@@ -22,15 +22,14 @@ export const useSubmissionCreate = (data) => {
             return await insertNewSubmission(data);
         },
         {
-            onSuccess: (data) => {
-                queryClient.invalidateQueries();
-                return data;
-            },
+            // Targeted: a bare invalidateQueries() dropped every cached query in
+            // the app, re-triggering full shareholder drains on unrelated pages.
             onSettled: () => {
-                queryClient.invalidateQueries();
-            },
-            onError: () => {
-                queryClient.invalidateQueries();
+                queryClient.invalidateQueries("AllSubmissionsByFilter");
+                queryClient.invalidateQueries("ProjectSingleWithShareholders");
+                queryClient.invalidateQueries("SingleProjectWithShareholders");
+                queryClient.invalidateQueries("projectShareholderPage");
+                queryClient.invalidateQueries("shareholdersFromProject");
             },
         }
     );
@@ -70,11 +69,13 @@ export const useSubmissionsFilter = (type, value) => {
         ["AllSubmissionsByFilter", type, value],
         getAllSubmissionsByFilter,
         {
-            cacheTime: 0, // Cache time in milliseconds, 0 means no caching
-            staleTime: 0, // Mark data as stale immediately after fetching
-            refetchOnMount: true, // Ensures refetch on component mount
-            refetchOnReconnect: true, // Ensures refetch on component mount
-            refetchOnWindowFocus: true, // Prevents refetching when window gains focus
+            // This is the heaviest join in the app (submission + shareholder +
+            // project). Refetching it on every window focus was gratuitous;
+            // mutations invalidate it explicitly instead.
+            staleTime: 60 * 1000,
+            refetchOnMount: true,
+            refetchOnReconnect: true,
+            refetchOnWindowFocus: false,
         }
     );
 };
@@ -178,7 +179,35 @@ export const useSubmissionsByProjectAndShareholder = (
     );
 };
 
-const deleteSubmission = async ({ submissionID, result, projectID }) => {
+// every submission for a set of shareholder rows (one person across projects)
+const getSubmissionsByShareholderIds = async ({ queryKey }) => {
+    const ids = queryKey[1];
+    if (!ids?.length) return [];
+
+    const { data: submissions, error } = await supabase
+        .from("submission")
+        .select("*")
+        .in("shareholder_id", ids)
+        .eq("is_deleted", false)
+        .order("date", { ascending: false })
+        .order("id", { ascending: false });
+
+    if (error) throw error;
+
+    return submissions || [];
+};
+
+export const useSubmissionsByShareholderIds = (ids = []) => {
+    return useQuery(
+        ["SubmissionsByShareholderIds", ids],
+        getSubmissionsByShareholderIds,
+        {
+            enabled: ids.length > 0,
+        }
+    );
+};
+
+const deleteSubmission =async ({ submissionID, result, projectID }) => {
     const { data: submission, error } = await supabase
         .from("submission")
         .update({ is_deleted: true })

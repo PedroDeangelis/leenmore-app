@@ -1,24 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { fetchShareholdersFromProject } from "./useShareholder";
+import {
+    fetchShareholdersFromProject,
+    SHAREHOLDER_RESULT_COLUMNS,
+    SHAREHOLDER_TABLE_COLUMNS,
+} from "./useShareholder";
 import transl from "../pages/components/translate";
 import supabase from "../utils/supabaseClient";
 import { fetchAllInBatches } from "../utils/supabaseBatchFetch";
 
 //Get list of All projects
-
-const getAllProjects = async () => {
-    let { data: project, error } = await supabase
-        .from("project")
-        .select(`*, shareholder (*)`)
-        .in("status", ["publish", "draft"])
-        .order("id", { ascending: false });
-
-    return project;
-};
-
-export const useProjectsList = () => {
-    return useQuery(["ProjectsList"], getAllProjects);
-};
 
 const getSingleProjectWithShareholders = async ({ queryKey }) => {
     const project_id = queryKey[1];
@@ -38,9 +28,11 @@ const getSingleProjectWithShareholders = async ({ queryKey }) => {
     }
 
     try {
+        // This feeds only the dashboard percentage summary, which needs the
+        // result + share + e-vote/e-proxy fields -- not all 28 columns.
         const shareholders = await fetchShareholdersFromProject({
             project_id,
-            columns: "*",
+            columns: SHAREHOLDER_RESULT_COLUMNS,
         });
 
         return {
@@ -228,7 +220,7 @@ const getProjectWithShareholders = async ({ queryKey }) => {
             await Promise.all([
                 fetchShareholdersFromProject({
                     project_id,
-                    columns: "*",
+                    columns: SHAREHOLDER_TABLE_COLUMNS,
                 }),
                 supabase
                     .from("submission")

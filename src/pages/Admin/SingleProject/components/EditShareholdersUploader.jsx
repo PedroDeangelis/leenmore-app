@@ -33,36 +33,34 @@ function EditShareholdersUploader({ handleClose }) {
 				updateShaholdersMutation.mutate(
 					{ formatedShareholders },
 					{
-						onSuccess: (error) => {
-							if (error) {
-								toast.error(
-									"Something went wrong! Check your excel please.",
-									{
-										position: "top-right",
-										autoClose: 4000,
-										hideProgressBar: false,
-										closeOnClick: true,
-										pauseOnHover: true,
-										draggable: true,
-										progress: undefined,
-									}
-								);
-							} else {
-								toast.success(
-									transl("The Shareholder list is updated"),
-									{
-										position: "top-right",
-										autoClose: 4000,
-										hideProgressBar: false,
-										closeOnClick: true,
-										pauseOnHover: true,
-										draggable: true,
-										progress: undefined,
-									}
-								);
-							}
+						onSuccess: () => {
+							toast.success(
+								transl("The Shareholder list is updated"),
+								{
+									position: "top-right",
+									autoClose: 4000,
+									hideProgressBar: false,
+									closeOnClick: true,
+									pauseOnHover: true,
+									draggable: true,
+									progress: undefined,
+								}
+							);
 							handleClose();
-							setIsloading(false);
+						},
+						onError: () => {
+							toast.error(
+								"Something went wrong! Check your excel please.",
+								{
+									position: "top-right",
+									autoClose: 4000,
+									hideProgressBar: false,
+									closeOnClick: true,
+									pauseOnHover: true,
+									draggable: true,
+									progress: undefined,
+								}
+							);
 						},
 					}
 				);

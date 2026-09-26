@@ -30,6 +30,7 @@ export const fetchAllInBatches = async ({
     ascending = true,
     batchSize = DEFAULT_BATCH_SIZE,
     concurrency = DEFAULT_CONCURRENCY,
+    tiebreakColumn = "id",
 }) => {
     const applyMatch = (query) => {
         Object.entries(match).forEach(([column, value]) => {
@@ -63,6 +64,9 @@ export const fetchAllInBatches = async ({
             chunk.map(({ from, to }) =>
                 applyMatch(supabase.from(table).select(columns))
                     .order(orderColumn, { ascending })
+                    // Tiebreak so rows sharing an orderColumn value keep a
+                    // stable position across batches (e.g. duplicate `no`).
+                    .order(tiebreakColumn, { ascending })
                     .range(from, to)
                     .then(({ data, error }) => {
                         if (error) throw error;
@@ -74,4 +78,87 @@ export const fetchAllInBatches = async ({
     }
 
     return results;
+};
+
+/**
+ * Fetch ONE page of rows using keyset pagination.
+ *
+ * Unlike fetchAllInBatches (which drains every row and is for exports), this is
+ * for on-screen lists. Keyset (.gt/.lt on a stable column) is used instead of
+ * .range() so deep pages don't make Postgres scan and discard every preceding
+ * row -- at 30k+ rows that dominates the query cost.
+ *
+ * @param {Object} params
+ * @param {string} params.table
+ * @param {Object} [params.match]      Equality filters.
+ * @param {string} [params.columns]
+ * @param {string} [params.orderColumn] Stable, indexed cursor column.
+ * @param {boolean} [params.ascending]
+ * @param {number} [params.limit]
+ * @param {*} [params.cursor]          Last seen orderColumn value, or null.
+ * @param {Array<{columns: string[], value: string}>} [params.search]
+ *   OR-ed case-insensitive substring filters, applied server-side.
+ * @returns {Promise<{rows: Array, nextCursor: *}>}
+ */
+export const fetchPage = async ({
+    table,
+    match = {},
+    columns = "*",
+    orderColumn = "id",
+    ascending = true,
+    limit = 40,
+    cursor = null,
+    search = null,
+    tiebreakColumn = "id",
+}) => {
+    let query = supabase.from(table).select(columns);
+
+    Object.entries(match).forEach(([column, value]) => {
+        query = query.eq(column, value);
+    });
+
+    // Two independent .or() calls would be AND-ed by PostgREST in a way that is
+    // easy to get wrong, so each group is built as a single explicit clause.
+    if (search && search.value) {
+        // Strip PostgREST's or() delimiters and wildcard before interpolating.
+        const term = String(search.value).replace(/[,()*]/g, "");
+        if (term) {
+            query = query.or(
+                search.columns
+                    .map((column) => `${column}.ilike.*${term}*`)
+                    .join(","),
+            );
+        }
+    }
+
+    // Composite cursor. orderColumn alone is not safe: `shareholder.no` has
+    // duplicates within a project, and a plain .gt() would skip the rest of a
+    // tied group. Compare on (orderColumn, tiebreakColumn) instead.
+    if (cursor !== null && cursor !== undefined) {
+        const { value, tiebreak } = cursor;
+        const op = ascending ? "gt" : "lt";
+
+        query = query.or(
+            `${orderColumn}.${op}.${value},` +
+                `and(${orderColumn}.eq.${value},${tiebreakColumn}.${op}.${tiebreak})`,
+        );
+    }
+
+    const { data, error } = await query
+        .order(orderColumn, { ascending })
+        .order(tiebreakColumn, { ascending })
+        .limit(limit);
+
+    if (error) throw error;
+
+    const rows = data || [];
+    const last = rows[rows.length - 1];
+
+    return {
+        rows,
+        nextCursor:
+            rows.length === limit && last
+                ? { value: last[orderColumn], tiebreak: last[tiebreakColumn] }
+                : null,
+    };
 };

@@ -1,15 +1,14 @@
-import { Button, CircularProgress } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { Button } from "@mui/material";
+import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
     useProjectAndSubmissions,
     useProjecUpdate,
 } from "../../../hooks/useProject";
-import { useShareholdersFromProject } from "../../../hooks/useShareholder";
+import { useProjectShareholderTally } from "../../../hooks/useShareholder";
 import transl from "../../components/translate";
 import Header from "../components/Header";
-import getAllResultsFromSubmission from "./components/getAllResultsFromSubmission";
 import SingleProjectInfo from "./components/SingleProjectInfo";
 import SingleProjectResults from "./components/SingleProjectResults";
 import SingleProjectShareholders from "./components/SingleProjectShareholders";
@@ -18,33 +17,17 @@ import ProjectTitle from "./components/projectTitle";
 function SingleProjectIndex() {
     const { id } = useParams();
     const updateProjectMutation = useProjecUpdate();
-    const [shareholderProjectId, setShareholderProjectId] = useState(false);
     const { data: project, isLoading: isProjectsLoading } =
         useProjectAndSubmissions(id);
-    const {
-        data: projectShareholders = [],
-        isLoading: isShareholdersLoading,
-        isFetching: isShareholdersFetching,
-    } = useShareholdersFromProject(shareholderProjectId, { columns: "*" });
 
-    useEffect(() => {
-        if (project?.id) {
-            setShareholderProjectId(project.id);
-        }
-    }, [project?.id]);
-
-    const projectWithShareholders = project
-        ? {
-              ...project,
-              shareholder: projectShareholders,
-          }
-        : false;
-
-    const isShareholdersPending =
-        !!project?.id &&
-        (!shareholderProjectId ||
-            isShareholdersLoading ||
-            isShareholdersFetching);
+    // Keyed on the route param, not on project.id from the query above, so it
+    // runs in PARALLEL with it. Previously an effect set the shareholder query's
+    // id only after the project resolved, serializing two full-table reads.
+    //
+    // This replaces downloading every shareholder row: the results panel only
+    // ever needed per-result share totals, which Postgres aggregates in ~140ms.
+    const { data: tally, isLoading: isTallyLoading } =
+        useProjectShareholderTally(id);
 
     const handlePusblishProject = (status) => {
         //create a alert to confirm the action
@@ -145,28 +128,19 @@ function SingleProjectIndex() {
                         status={project.status}
                         project={project}
                         hasSubmission={project?.submission?.length}
-                        isShareholdersPending={isShareholdersPending}
-                        projectShareholders={projectShareholders}
                     />
                     <SingleProjectResults
-                        project={projectWithShareholders}
+                        project={project}
                         results={project.results}
-                        isShareholdersPending={isShareholdersPending}
-                        projectShareholders={projectShareholders}
-                        // shareholderResults={getAllResultsFromSubmission(
-                        //     projectShareholders,
-                        // )}
-                        // shareholdersCount={projectShareholders.length}
+                        tally={tally}
+                        isTallyLoading={isTallyLoading}
                     />
-                    {isShareholdersPending ? (
-                        <div className="py-8 text-center">
-                            <CircularProgress />
-                        </div>
-                    ) : (
-                        <SingleProjectShareholders
-                            project={projectWithShareholders}
-                        />
-                    )}
+                    {/* Not gated on the tally: this table pages its own rows
+                        server-side, so it can render while the totals load. */}
+                    <SingleProjectShareholders
+                        project={project}
+                        shareholderCount={tally?.shareholderCount}
+                    />
                 </div>
             )}
         </>

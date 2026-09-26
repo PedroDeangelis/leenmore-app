@@ -43,6 +43,7 @@ import SearchShareholdersApp from "../pages/Worker/SearchShareholdersApp";
 import EmailToWorker from "../pages/Admin/EmailToWorker";
 import SingleEmailToWorker from "../pages/Admin/SingleEmailToWorker";
 import SingleProjectIndex from "../pages/Admin/SingleProject/SingleProjectIndex";
+import ShareholderSearch from "../pages/Admin/ShareholderSearch";
 
 function Router() {
     const { data, isLoading, isFetching } = useUserisLoggendIn();
@@ -94,6 +95,10 @@ function Router() {
                 {
                     path: "/dashboard/submission",
                     element: <Submissions />,
+                },
+                {
+                    path: "/dashboard/shareholder-search",
+                    element: <ShareholderSearch />,
                 },
                 {
                     path: "/dashboard/activity-report/new/:project_id",

@@ -1,5 +1,6 @@
 import {
     Button,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
@@ -12,7 +13,12 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import EditShareholdersUploader from "./EditShareholdersUploader";
 import { downloadShareholderData } from "../../components/shareholderSheet";
 
-function EditShareholdersListDialog({ open, handleClose, csvBody }) {
+function EditShareholdersListDialog({
+    open,
+    handleClose,
+    csvBody,
+    isLoading,
+}) {
     return (
         <Dialog
             open={open}
@@ -35,11 +41,18 @@ function EditShareholdersListDialog({ open, handleClose, csvBody }) {
                 <EditShareholdersUploader handleClose={handleClose} />
             </DialogContent>
             <div className="flex justify-between p-4">
+                {/* The rows are fetched only when this dialog opens, so the
+                    download is disabled until they arrive. */}
                 <Button
                     variant="outlined"
+                    disabled={isLoading || !csvBody}
                     onClick={() => downloadShareholderData(csvBody)}
                 >
-                    <FileDownloadIcon />
+                    {isLoading ? (
+                        <CircularProgress size={18} sx={{ marginRight: "8px" }} />
+                    ) : (
+                        <FileDownloadIcon />
+                    )}
                     Download Data File
                 </Button>
                 <Button onClick={handleClose} autoFocus>

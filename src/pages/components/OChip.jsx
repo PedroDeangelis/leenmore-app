@@ -2,6 +2,7 @@ import { darken, lighten } from "polished";
 import React from "react";
 import styled from "styled-components";
 import { getTheResultColorOption } from "./resultColorOptions";
+import { isEproxyLinkResult } from "./resultSentinels";
 
 const OChipStyled = styled.div`
     min-width: 80px;
@@ -23,7 +24,9 @@ function OChip({ children, color, size, onlyColor = false }) {
         classStyles += " py-4 w-full";
     }
 
-    if (children == "위임(전자위임)") {
+    // The e-proxy chip is bolded. Keyed off the label helper rather than a
+    // hardcoded Korean literal, which only matched under the ko locale.
+    if (isEproxyLinkResult(children)) {
         classStyles += " font-bold";
     }
 

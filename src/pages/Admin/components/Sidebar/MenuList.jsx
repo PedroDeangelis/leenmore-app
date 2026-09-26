@@ -54,6 +54,11 @@ function MenuList() {
                     icon={<DashboardIcon fontSize="small" />}
                     link="/dashboard/email-to-worker"
                 />
+                <MenuListItem
+                    title={transl("Shareholder Search")}
+                    icon={<DashboardIcon fontSize="small" />}
+                    link="/dashboard/shareholder-search"
+                />
             </div>
         </LayoutGroup>
     );

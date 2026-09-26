@@ -4,18 +4,54 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { toast } from "react-toastify";
 import { useProjecUpdate } from "../../../../../hooks/useProject";
 import transl from "../../../../components/translate";
+import {
+    parseProjectResults,
+    serializeProjectResults,
+    sortResultsForDisplay,
+} from "../../../../components/projectResults";
 import ResultsDragnDragItem from "./ResultsDragnDragItem";
 
 function ResultsDragnDrog({ results, setIsOrderning, project }) {
-    const [resultsTemp, setResultsTemp] = useState([]);
+    const [displayOrder, setDisplayOrder] = useState([]);
     const updateProjectMutation = useProjecUpdate();
 
+    useEffect(() => {
+        // Seed from display order. Each entry keeps its immutable physicalIndex.
+        setDisplayOrder(sortResultsForDisplay(parseProjectResults(results)));
+    }, [results]);
+
+    const onDragEnd = ({ source, destination }) => {
+        if (!destination || destination.index === source.index) return;
+
+        // Reorder the DISPLAY list positionally. No name lookups and no
+        // arithmetic on `order` — it is recomputed from scratch on save.
+        setDisplayOrder((prev) => {
+            const next = [...prev];
+            const [moved] = next.splice(source.index, 1);
+            next.splice(destination.index, 0, moved);
+            return next;
+        });
+    };
+
     const handleResultsSave = () => {
+        // Assign a clean dense 0..n-1 `order` from final display position. This
+        // also repairs projects that had duplicate or gapped order values.
+        const withOrder = displayOrder.map((result, i) => ({
+            ...result,
+            order: i,
+        }));
+
+        // Restore PHYSICAL order before serializing. The array layout is never
+        // permuted, so every submission.result pointer stays valid.
+        const inPhysicalOrder = [...withOrder].sort(
+            (a, b) => a.physicalIndex - b.physicalIndex,
+        );
+
         updateProjectMutation.mutate(
             {
                 project_id: project.id,
                 meta: {
-                    results: resultsTemp,
+                    results: serializeProjectResults(inPhysicalOrder),
                 },
             },
             {
@@ -35,60 +71,10 @@ function ResultsDragnDrog({ results, setIsOrderning, project }) {
             }
         );
     };
+
     const handleCancel = () => {
         setIsOrderning(false);
     };
-
-    const onDragEnd = (result) => {
-        const { draggableId, source, destination } = result;
-
-        var newItems = JSON.parse(JSON.stringify(resultsTemp));
-        if (!destination) {
-            return newItems;
-        }
-
-        // // Update the 'order' property based on the movement
-        newItems = newItems.map((item, index) => {
-            if (source.index < destination.index) {
-                // Moving down in the list
-                if (
-                    item.order > source.index &&
-                    item.order <= destination.index
-                ) {
-                    item.order--;
-                }
-            } else if (source.index > destination.index) {
-                // Moving up in the list
-                if (
-                    item.order >= destination.index &&
-                    item.order < source.index
-                ) {
-                    item.order++;
-                }
-            }
-            return item;
-        });
-
-        // Update the destination object with the new order value
-        newItems.find((item) => item.name === draggableId).order =
-            destination.index;
-
-        setResultsTemp(newItems);
-    };
-
-    useEffect(() => {
-        const newResult = results.map((value, i) => {
-            let result = JSON.parse(value);
-
-            if (result?.order === undefined) {
-                result = { ...result, order: i };
-            }
-
-            return result;
-        });
-
-        setResultsTemp(newResult);
-    }, [results]);
 
     return (
         <Card>
@@ -121,34 +107,29 @@ function ResultsDragnDrog({ results, setIsOrderning, project }) {
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
                             >
-                                {resultsTemp &&
-                                    resultsTemp.length > 0 &&
-                                    Array.from(resultsTemp)
-                                        .sort((a, b) => a?.order - b?.order)
-
-                                        .map((result, index) => {
-                                            return (
-                                                <Draggable
-                                                    key={result.name}
-                                                    draggableId={result.name.toString()}
-                                                    index={index}
-                                                >
-                                                    {(provided) => (
-                                                        <div
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                            ref={
-                                                                provided.innerRef
-                                                            }
-                                                        >
-                                                            <ResultsDragnDragItem
-                                                                result={result}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </Draggable>
-                                            );
-                                        })}
+                                {displayOrder.map((result, index) => (
+                                    <Draggable
+                                        // Key by immutable identity: names are
+                                        // editable and can be duplicated.
+                                        key={result.physicalIndex}
+                                        draggableId={String(
+                                            result.physicalIndex
+                                        )}
+                                        index={index}
+                                    >
+                                        {(provided) => (
+                                            <div
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                ref={provided.innerRef}
+                                            >
+                                                <ResultsDragnDragItem
+                                                    result={result}
+                                                />
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
                                 {provided.placeholder}
                             </div>
                         )}
