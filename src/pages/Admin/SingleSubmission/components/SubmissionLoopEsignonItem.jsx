@@ -46,7 +46,7 @@ function SubmissionLoopEsignonItem({ project, shareholderValue, created_at }) {
                 </p>
                 <p className="w-1/12 text-xs">{transl("Source")}: Esignon</p>
                 <p className="w-1/12 text-xs text-slate-600">
-                    {formatDate(created_at, "YY/MM/DD HH:mm")}
+                    {formatDate(completionDate, "YY/MM/DD HH:mm")}
                 </p>
                 <p className="w-2/12">{project || "-"}</p>
                 <div className="w-2/12 text-center relative flex justify-end items-center">

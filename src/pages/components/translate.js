@@ -338,6 +338,23 @@ export default function transl(char) {
         "no submissions": "활동 내역 없음",
         "contact info 2": "주소서치 2",
         "last note": "최근 특이사항",
+        "custom documents": "맞춤 문서",
+        "upload document": "문서 업로드",
+        "document uploaded": "문서가 업로드되었습니다",
+        "delete this document?": "이 문서를 삭제하시겠습니까?",
+        "document deleted": "문서가 삭제되었습니다",
+        "no custom documents": "업로드된 맞춤 문서가 없습니다",
+        "no shortcodes found": "단축코드가 없습니다",
+        "unknown shortcode": "알 수 없는 단축코드",
+        "worker name": "활동가 이름",
+        "3 spaces between letters": "글자 사이 3칸 띄우기",
+        "word (.docx) only. each worker gets the checked documents as a pdf filled with their info. check a document to preview it per worker.":
+            "Word(.docx) 파일만 가능합니다. 선택한 문서는 각 활동가의 정보로 채워져 PDF로 발송됩니다. 문서를 선택하면 활동가별로 미리볼 수 있습니다.",
+        "preview document": "문서 미리보기",
+        "missing worker info": "활동가 정보 누락",
+        "layout may differ slightly from the word file":
+            "Word 파일과 레이아웃이 약간 다를 수 있습니다",
+        "some emails could not be sent": "일부 이메일을 보내지 못했습니다",
     };
 
     return map[key] ? map[key] : char;

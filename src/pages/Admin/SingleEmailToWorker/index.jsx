@@ -20,7 +20,12 @@ import { useUser, useUserisLoggendIn } from "../../../hooks/useUser";
 import { useEmailSender } from "../../../hooks/useEmailSender";
 import { useResources } from "../../../hooks/useResource";
 import { useExcelGenerator } from "../../../hooks/useExcelGenerator";
+import { useCustomDocumentPreview } from "../../../hooks/useCustomDocuments";
 import { toast } from "react-toastify";
+import CustomDocuments from "./components/CustomDocuments";
+
+const getErrorMessage = (error) =>
+    error?.response?.data?.error || error?.message || "";
 
 function SingleEmailToWorker() {
     const { project_id } = useParams();
@@ -29,6 +34,7 @@ function SingleEmailToWorker() {
     const { data: usermeta } = useUser(currentUser?.id);
     const emailSender = useEmailSender();
     const excelGenerator = useExcelGenerator();
+    const customDocumentPreview = useCustomDocumentPreview();
     const { data: resources, isLoading: isResourcesLoading } = useResources(
         project_id,
         "project",
@@ -42,6 +48,8 @@ function SingleEmailToWorker() {
     const [includeWorkerReportXLSL, setIncludeWorkerReportXLSL] =
         useState(true);
     const [includeWorkerReportPDF, setIncludeWorkerReportPDF] = useState(true);
+    const [selectedCustomDocIds, setSelectedCustomDocIds] = useState([]);
+    const [previewingWorker, setPreviewingWorker] = useState(null);
     const [isSendingEmails, setIsSendingEmails] = useState(false);
     const [sortColumn, setSortColumn] = useState("a");
     const [sortOrder, setSortOrder] = useState("asc");
@@ -277,6 +285,10 @@ function SingleEmailToWorker() {
         const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
         const shouldIncludeWorkerReport =
             includeWorkerReportXLSL || includeWorkerReportPDF;
+        // Reports and custom documents are different for each worker, so
+        // those emails go out one worker at a time.
+        const shouldSendPerWorker =
+            shouldIncludeWorkerReport || selectedCustomDocIds.length > 0;
 
         const sendEmailToWorkers = async (
             workers,
@@ -294,13 +306,15 @@ function SingleEmailToWorker() {
                 attachments: attachmentsPayload,
                 include_worker_report_xlsl: includeWorkerReportXLSL,
                 include_worker_report_pdf: includeWorkerReportPDF,
+                custom_document_ids: selectedCustomDocIds,
             });
         };
 
         setIsSendingEmails(true);
         let didSend = false;
+        const failedWorkers = [];
         try {
-            if (!shouldIncludeWorkerReport) {
+            if (!shouldSendPerWorker) {
                 await sendEmailToWorkers(
                     selectedWorkerIds,
                     linksPayload,
@@ -315,7 +329,9 @@ function SingleEmailToWorker() {
 
             for (const workerId of selectedWorkerIds) {
                 const workerName = workerId;
-                const workerShareholders = getWorkerShareholders(workerName);
+                const workerShareholders = shouldIncludeWorkerReport
+                    ? getWorkerShareholders(workerName)
+                    : [];
                 let reportUrlXlsx = null;
                 let reportUrlPdf = null;
 
@@ -349,22 +365,82 @@ function SingleEmailToWorker() {
                     }
                 }
 
-                await sendEmailToWorkers(
-                    [workerId],
-                    linksPayload,
-                    includeWorkerReportXLSL ? reportUrlXlsx : false,
-                    includeWorkerReportPDF ? reportUrlPdf : false,
-                );
+                try {
+                    await sendEmailToWorkers(
+                        [workerId],
+                        linksPayload,
+                        includeWorkerReportXLSL ? reportUrlXlsx : false,
+                        includeWorkerReportPDF ? reportUrlPdf : false,
+                    );
+                    didSend = true;
+                } catch (error) {
+                    failedWorkers.push(
+                        `${workerName}: ${getErrorMessage(error)}`,
+                    );
+                }
             }
 
-            setSubject("");
-            setMessage("");
-            didSend = true;
+            // Keep the message after a failure so it can be resent.
+            if (!failedWorkers.length) {
+                setSubject("");
+                setMessage("");
+            }
+        } catch (error) {
+            toast.error(getErrorMessage(error));
         } finally {
             setIsSendingEmails(false);
             if (didSend) {
                 toast.success("Email sent successfully");
             }
+            if (failedWorkers.length) {
+                toast.error(
+                    `${transl("Some emails could not be sent")}: ${failedWorkers.join(", ")}`,
+                    { autoClose: false },
+                );
+            }
+        }
+    };
+
+    const handlePreviewCustomDocuments = async (workerName) => {
+        if (!workerName || !selectedCustomDocIds.length || previewingWorker) {
+            return;
+        }
+
+        const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
+        const missing = new Set();
+        let isLayoutApproximate = false;
+
+        setPreviewingWorker(workerName);
+        try {
+            for (const documentId of selectedCustomDocIds) {
+                const result = await customDocumentPreview.mutateAsync({
+                    project_id,
+                    document_id: documentId,
+                    worker_name: workerName,
+                });
+                downloadFromUrl(
+                    `${storagePath}${result.pdf_path}`,
+                    result.filename,
+                );
+                (result.missing || []).forEach((code) => missing.add(code));
+                // mPDF is the fallback when the server has no LibreOffice.
+                if (result.pdf_writer !== "LibreOffice") {
+                    isLayoutApproximate = true;
+                }
+            }
+
+            if (missing.size) {
+                toast.warning(
+                    `${workerName}: ${transl("Missing worker info")} (${[...missing].join(", ")})`,
+                );
+            }
+            if (isLayoutApproximate) {
+                toast.info(transl("Layout may differ slightly from the Word file"));
+            }
+        } catch (error) {
+            toast.error(`${workerName}: ${getErrorMessage(error)}`);
+        } finally {
+            setPreviewingWorker(null);
         }
     };
 
@@ -690,7 +766,7 @@ function SingleEmailToWorker() {
                                 }
                                 label={worker.name}
                             />
-                            <div className="pr-2">
+                            <div className="pr-2 flex gap-2">
                                 <Button
                                     variant="outlined"
                                     size="small"
@@ -703,6 +779,26 @@ function SingleEmailToWorker() {
                                 >
                                     명부양식 내려받기
                                 </Button>
+                                {selectedCustomDocIds.length > 0 && (
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{ whiteSpace: "nowrap" }}
+                                        className="flex-shrink-0 "
+                                        onClick={() =>
+                                            handlePreviewCustomDocuments(
+                                                worker.id,
+                                            )
+                                        }
+                                        disabled={previewingWorker !== null}
+                                    >
+                                        {previewingWorker === worker.id ? (
+                                            <CircularProgress size={18} />
+                                        ) : (
+                                            transl("Preview document")
+                                        )}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -852,6 +948,11 @@ function SingleEmailToWorker() {
                             label="이메일에 명부양식 포함 (PDF 형식)"
                         />
                     </div>
+                    <CustomDocuments
+                        projectId={project_id}
+                        selectedIds={selectedCustomDocIds}
+                        onSelectedIdsChange={setSelectedCustomDocIds}
+                    />
                 </div>
             </div>
         </div>

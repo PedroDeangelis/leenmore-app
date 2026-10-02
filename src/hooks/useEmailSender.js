@@ -12,6 +12,7 @@ const EmailSender = async ({
     attachments,
     include_worker_report_xlsl = false,
     include_worker_report_pdf = false,
+    custom_document_ids = [],
 }) => {
     let response = false;
     const recipients = await getWorkersEmails(workers);
@@ -33,6 +34,8 @@ const EmailSender = async ({
                 token: process.env.REACT_APP_STORAGE_AUTH_KEY,
                 include_worker_report: include_worker_report_xlsl,
                 include_worker_report_pdf: include_worker_report_pdf,
+                // Filled with each worker's info and attached as PDFs by the server.
+                custom_document_ids,
             },
             {
                 headers: {
