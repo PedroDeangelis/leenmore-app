@@ -296,6 +296,8 @@ export default function transl(char) {
         "phone number": "전화번호",
         "add new user": "새 사용자 추가",
         "edit phone number": "전화번호 수정",
+        rank: "직급",
+        "edit rank": "직급 수정",
         "edit email receiver": "이메일 수신자 수정",
         "email receiver": "이메일 수신자",
         "loading shareholders": "주주 불러오는 중",
@@ -317,14 +319,14 @@ export default function transl(char) {
         "max amount": "최대 금액",
         source: "출처",
         "shareholder search": "주주 조회",
-        "date of birth code or registration number":
-            "생년월일 6자리 또는 실명번호",
-        "enter a date of birth code or registration number":
-            "생년월일 6자리 또는 실명번호를 입력하세요",
-        "if a registration number is not found, try the 6-digit date of birth code":
-            "실명번호로 찾을 수 없으면 생년월일 6자리로 검색해 보세요",
-        "only the first 1000 rows are shown. search by registration number to narrow the results.":
-            "처음 1000개 행만 표시됩니다. 실명번호로 검색하여 결과를 좁혀주세요.",
+        "name, date of birth code or registration number":
+            "주주명, 생년월일 6자리 또는 실명번호",
+        "enter a name, date of birth code or registration number":
+            "주주명, 생년월일 6자리 또는 실명번호를 입력하세요",
+        "type at least 2 characters of a name to list everyone whose name starts with them. if a registration number is not found, try the 6-digit date of birth code":
+            "주주명은 2자 이상 입력하면 그 글자로 시작하는 주주가 모두 표시됩니다. 실명번호로 찾을 수 없으면 생년월일 6자리로 검색해 보세요",
+        "only the first 1000 rows are shown. search by full name, date of birth code or registration number to narrow the results.":
+            "처음 1000개 행만 표시됩니다. 전체 이름, 생년월일 6자리 또는 실명번호로 검색하여 결과를 좁혀주세요.",
         "no shareholders found": "주주를 찾을 수 없습니다",
         "error loading shareholders": "주주를 불러오는 중 오류가 발생했습니다",
         "error loading submissions": "활동 내역을 불러오는 중 오류가 발생했습니다",

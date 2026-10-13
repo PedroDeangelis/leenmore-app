@@ -93,6 +93,7 @@ function SingleUser() {
                         role={data.role}
                         status={data.status}
                         phone_number={data.phone_number}
+                        rank={data.rank}
                     />
                     <div className="grid grid-cols-2">
                         <SingleUserEdit id={data.id} />

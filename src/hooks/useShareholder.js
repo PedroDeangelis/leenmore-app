@@ -622,34 +622,68 @@ export const useShareholderSearchByUser = (user, search) => {
     );
 };
 
-// Admin shareholder search: every row, across all projects, whose
-// date_of_birth_code or registration exactly matches the searched number.
+// Admin shareholder search: every row, across all projects, for one person.
+// Digits search date_of_birth_code / registration exactly; anything with
+// letters searches the name by word prefix (search_shareholders_by_name).
 export const SHAREHOLDER_SEARCH_ADMIN_LIMIT = 1000;
+export const SHAREHOLDER_NAME_SEARCH_MIN_LENGTH = 2;
 
 // The importer stores registration / date_of_birth_code as digits only, so
 // "900101-1234567" must be searched as "9001011234567".
 export const normalizeShareholderSearch = (search) =>
     String(search ?? "").replace(/\D/g, "");
 
-const getShareholderSearchAdmin = async ({ queryKey }) => {
-    const digits = queryKey[1];
-    if (!digits) return [];
+// What a search box value means: { mode: "code" | "name" | "none", term }.
+export const parseShareholderSearch = (search) => {
+    const text = String(search ?? "")
+        .trim()
+        .replace(/\s+/g, " ");
+    if (!text) return { mode: "none", term: "" };
 
-    const { data: shareholders, error } = await supabase
-        .from("shareholder")
-        .select(
-            `
-            *,
-            project:project_id!inner (
-                id,
-                title,
-                results,
-                status
-            )
-        `,
-        )
-        // digits only, so safe to interpolate into .or()
-        .or(`date_of_birth_code.eq.${digits},registration.eq.${digits}`)
+    // Only digits and separators: a date of birth code or registration number.
+    if (/^[\d\s.-]+$/.test(text)) {
+        const digits = normalizeShareholderSearch(text);
+        return digits
+            ? { mode: "code", term: digits }
+            : { mode: "none", term: "" };
+    }
+
+    // A lone surname (김) would match hundreds of thousands of rows.
+    if (text.replace(/\s/g, "").length < SHAREHOLDER_NAME_SEARCH_MIN_LENGTH) {
+        return { mode: "none", term: "" };
+    }
+
+    return { mode: "name", term: text };
+};
+
+const SHAREHOLDER_SEARCH_ADMIN_SELECT = `
+    *,
+    project:project_id!inner (
+        id,
+        title,
+        results,
+        status
+    )
+`;
+
+const getShareholderSearchAdmin = async ({ queryKey }) => {
+    const [, mode, term] = queryKey;
+    if (!term || mode === "none") return [];
+
+    const query =
+        mode === "name"
+            ? // The function matches name word prefixes through the shareholder
+              // tsvector index; PostgREST embeds the project on its rows.
+              supabase
+                  .rpc("search_shareholders_by_name", { p_name: term })
+                  .select(SHAREHOLDER_SEARCH_ADMIN_SELECT)
+            : supabase
+                  .from("shareholder")
+                  .select(SHAREHOLDER_SEARCH_ADMIN_SELECT)
+                  // digits only, so safe to interpolate into .or()
+                  .or(`date_of_birth_code.eq.${term},registration.eq.${term}`);
+
+    const { data: shareholders, error } = await query
         .in("project.status", ["publish", "draft"])
         .order("name", { ascending: true })
         .order("project_id", { ascending: false })
@@ -661,13 +695,13 @@ const getShareholderSearchAdmin = async ({ queryKey }) => {
 };
 
 export const useShareholderSearchAdmin = (search) => {
-    const digits = normalizeShareholderSearch(search);
+    const { mode, term } = parseShareholderSearch(search);
 
     return useQuery(
-        ["ShareholderSearchAdmin", digits],
+        ["ShareholderSearchAdmin", mode, term],
         getShareholderSearchAdmin,
         {
-            enabled: !!digits,
+            enabled: mode !== "none",
         },
     );
 };

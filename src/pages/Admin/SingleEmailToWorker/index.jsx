@@ -408,7 +408,7 @@ function SingleEmailToWorker() {
 
         const storagePath = process.env.REACT_APP_STORAGE_PATH || "";
         const missing = new Set();
-        let isLayoutApproximate = false;
+        let hasWarning = false;
 
         setPreviewingWorker(workerName);
         try {
@@ -423,9 +423,8 @@ function SingleEmailToWorker() {
                     result.filename,
                 );
                 (result.missing || []).forEach((code) => missing.add(code));
-                // mPDF is the fallback when the server has no LibreOffice.
-                if (result.pdf_writer !== "LibreOffice") {
-                    isLayoutApproximate = true;
+                if (result.warning) {
+                    hasWarning = true;
                 }
             }
 
@@ -434,7 +433,7 @@ function SingleEmailToWorker() {
                     `${workerName}: ${transl("Missing worker info")} (${[...missing].join(", ")})`,
                 );
             }
-            if (isLayoutApproximate) {
+            if (hasWarning) {
                 toast.info(transl("Layout may differ slightly from the Word file"));
             }
         } catch (error) {
@@ -795,7 +794,9 @@ function SingleEmailToWorker() {
                                         {previewingWorker === worker.id ? (
                                             <CircularProgress size={18} />
                                         ) : (
-                                            transl("Preview document")
+                                            <span>
+                                                {transl("Preview document")}
+                                            </span>
                                         )}
                                     </Button>
                                 )}

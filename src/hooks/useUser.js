@@ -82,6 +82,7 @@ const createNewUSer = async ({
     email_receiver,
     password,
     phone_number,
+    rank,
 }) => {
     // Check if user already exists in profiles
     const { data: existingProfiles } = await supabase
@@ -106,6 +107,7 @@ const createNewUSer = async ({
                     first_name: first_name,
                     role: role,
                     phone_number: phone_number,
+                    rank: rank,
                     email_receiver: email_receiver,
                     email: email,
                     status: "active",
@@ -133,6 +135,7 @@ const createNewUSer = async ({
             first_name: first_name,
             role: role,
             phone_number: phone_number,
+            rank: rank,
             email: email,
             email_receiver: email_receiver,
             status: "active",
@@ -199,6 +202,7 @@ const updateUserProfile = async ({
     role,
     phone_number,
     email_receiver,
+    rank,
 }) => {
     if (first_name !== undefined || role !== undefined) {
         const userMetadata = {};
@@ -232,6 +236,10 @@ const updateUserProfile = async ({
 
     if (email_receiver !== undefined) {
         profileUpdates.email_receiver = email_receiver;
+    }
+
+    if (rank !== undefined) {
+        profileUpdates.rank = rank;
     }
 
     if (!Object.keys(profileUpdates).length) {

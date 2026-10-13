@@ -19,6 +19,7 @@ function FormNewUser() {
     const emailNameRef = useRef();
     const emailReceiverRef = useRef();
     const phoneNumberRef = useRef();
+    const rankRef = useRef();
     const passwordNameRef = useRef();
     const [role, setRole] = useState("worker");
     const newUserMutation = useUserNew();
@@ -35,6 +36,7 @@ function FormNewUser() {
                 email: emailNameRef.current.value,
                 first_name: firstNameRef.current.value,
                 phone_number: phoneNumberRef.current.value,
+                rank: rankRef.current.value,
                 email_receiver: emailReceiverRef.current.value,
                 role: role,
                 password: passwordNameRef.current.value,
@@ -89,6 +91,12 @@ function FormNewUser() {
                         label={transl("Phone Number")}
                         type="tel"
                         inputRef={phoneNumberRef}
+                    />
+                    <TextField
+                        sx={{ width: "100%", marginBottom: "16px" }}
+                        id="outlined-rank"
+                        label={transl("Rank")}
+                        inputRef={rankRef}
                     />
                     <FormControl fullWidth sx={{ marginBottom: "16px" }}>
                         <InputLabel id="demo-simple-select-label">

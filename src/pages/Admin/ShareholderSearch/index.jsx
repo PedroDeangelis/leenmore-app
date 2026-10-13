@@ -12,7 +12,7 @@ import {
     OutlinedInput,
 } from "@mui/material";
 import {
-    normalizeShareholderSearch,
+    parseShareholderSearch,
     SHAREHOLDER_SEARCH_ADMIN_LIMIT,
     useShareholderSearchAdmin,
 } from "../../../hooks/useShareholder";
@@ -39,19 +39,18 @@ function ShareholderSearch() {
         [shareholders],
     );
 
-    const canSearch = normalizeShareholderSearch(searchField).length > 0;
+    const canSearch = parseShareholderSearch(searchField).mode !== "none";
 
     const handleSearchSubmit = (event) => {
         event.preventDefault();
         if (!canSearch) return;
 
         const trimmedSearchField = searchField.trim();
+        const next = parseShareholderSearch(trimmedSearchField);
+        const previous = parseShareholderSearch(submittedSearch);
         setSelectedKey(null);
 
-        if (
-            normalizeShareholderSearch(trimmedSearchField) ===
-            normalizeShareholderSearch(submittedSearch)
-        ) {
+        if (next.mode === previous.mode && next.term === previous.term) {
             refetch();
             return;
         }
@@ -60,14 +59,14 @@ function ShareholderSearch() {
     };
 
     const hasSubmittedSearch =
-        normalizeShareholderSearch(submittedSearch).length > 0;
+        parseShareholderSearch(submittedSearch).mode !== "none";
     const isDone = hasSubmittedSearch && !isLoading && !isError;
     const showNoResults = isDone && people.length === 0;
     const showResults = isDone && people.length > 0;
     const isTruncated =
         (shareholders?.length ?? 0) >= SHAREHOLDER_SEARCH_ADMIN_LIMIT;
 
-    // A registration search usually finds one person: open the report directly.
+    // A number search usually finds one person: open the report directly.
     const selectedPerson =
         people.length === 1
             ? people[0]
@@ -81,7 +80,9 @@ function ShareholderSearch() {
                 <form onSubmit={handleSearchSubmit} className="flex gap-3">
                     <FormControl variant="outlined" sx={{ flex: 1 }}>
                         <InputLabel htmlFor="admin-shareholder-search">
-                            {transl("Date of birth code or registration number")}
+                            {transl(
+                                "Name, date of birth code or registration number",
+                            )}
                         </InputLabel>
                         <OutlinedInput
                             id="admin-shareholder-search"
@@ -91,7 +92,7 @@ function ShareholderSearch() {
                                 </InputAdornment>
                             }
                             label={transl(
-                                "Date of birth code or registration number",
+                                "Name, date of birth code or registration number",
                             )}
                             value={searchField}
                             onChange={(event) =>
@@ -100,7 +101,7 @@ function ShareholderSearch() {
                         />
                         <FormHelperText>
                             {transl(
-                                "If a registration number is not found, try the 6-digit date of birth code",
+                                "Type at least 2 characters of a name to list everyone whose name starts with them. If a registration number is not found, try the 6-digit date of birth code",
                             )}
                         </FormHelperText>
                     </FormControl>
@@ -117,7 +118,9 @@ function ShareholderSearch() {
 
             {!hasSubmittedSearch && (
                 <div className="text-center text-gray-500 mt-4">
-                    {transl("Enter a date of birth code or registration number")}
+                    {transl(
+                        "Enter a name, date of birth code or registration number",
+                    )}
                 </div>
             )}
 
@@ -142,7 +145,7 @@ function ShareholderSearch() {
             {showResults && isTruncated && (
                 <p className="text-sm text-amber-700 mb-3">
                     {transl(
-                        "Only the first 1000 rows are shown. Search by registration number to narrow the results.",
+                        "Only the first 1000 rows are shown. Search by full name, date of birth code or registration number to narrow the results.",
                     )}
                 </p>
             )}

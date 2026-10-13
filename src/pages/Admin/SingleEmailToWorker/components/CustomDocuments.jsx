@@ -20,6 +20,7 @@ const SUPPORTED_SHORTCODES = [
     { code: "[worker_name]", label: "Worker name" },
     { code: "[worker_email]", label: "Email" },
     { code: "[worker_phonenumber]", label: "Phone number" },
+    { code: "[worker_rank]", label: "Rank" },
     { code: '[worker_name space="3"]', label: "3 spaces between letters" },
 ];
 
@@ -97,10 +98,12 @@ function CustomDocuments({ projectId, selectedIds, onSelectedIdsChange }) {
                     disabled={uploadDocument.isLoading}
                     onClick={() => fileInput.current?.click()}
                 >
+                    {/* Text stays in a <span>: swapping a bare text node crashes
+                        React when a page translator has rewritten it. */}
                     {uploadDocument.isLoading ? (
                         <CircularProgress size={18} />
                     ) : (
-                        transl("Upload document")
+                        <span>{transl("Upload document")}</span>
                     )}
                 </Button>
                 <input

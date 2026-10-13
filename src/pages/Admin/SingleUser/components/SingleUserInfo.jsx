@@ -14,12 +14,15 @@ function SingleUserInfo({
     role,
     status,
     phone_number,
+    rank,
 }) {
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingPhoneNumber, setIsEditingPhoneNumber] = useState(false);
+    const [isEditingRank, setIsEditingRank] = useState(false);
     const [isEditingEmailReceiver, setIsEditingEmailReceiver] = useState(false);
     const [name, setName] = useState(first_name || "");
     const [phoneNumber, setPhoneNumber] = useState(phone_number || "");
+    const [rankValue, setRankValue] = useState(rank || "");
     const [emailReceiver, setEmailReceiver] = useState(email_receiver || "");
     const userProfileUpdateMutation = useUserProfileUpdate();
 
@@ -30,6 +33,10 @@ function SingleUserInfo({
     useEffect(() => {
         setPhoneNumber(phone_number || "");
     }, [phone_number]);
+
+    useEffect(() => {
+        setRankValue(rank || "");
+    }, [rank]);
 
     useEffect(() => {
         setEmailReceiver(email_receiver || "");
@@ -100,6 +107,37 @@ function SingleUserInfo({
         setIsEditingPhoneNumber(false);
     };
 
+    const handleRankSave = (e) => {
+        e.preventDefault();
+
+        const trimmedRank = rankValue.trim();
+
+        if (trimmedRank === (rank || "")) {
+            setIsEditingRank(false);
+            return;
+        }
+
+        userProfileUpdateMutation.mutate(
+            {
+                id: id,
+                first_name: first_name,
+                role: role,
+                rank: trimmedRank,
+            },
+            {
+                onSuccess: () => {
+                    toast.success(transl("User updated successfully"));
+                    setIsEditingRank(false);
+                },
+            },
+        );
+    };
+
+    const handleRankCancel = () => {
+        setRankValue(rank || "");
+        setIsEditingRank(false);
+    };
+
     const handleEmailReceiverSave = (e) => {
         e.preventDefault();
 
@@ -134,7 +172,7 @@ function SingleUserInfo({
     return (
         <Card className="mb-4">
             <CardContent>
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-6 gap-4">
                     <div className="">
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                             {transl("Title")}
@@ -238,6 +276,60 @@ function SingleUserInfo({
                                     startIcon={<EditIcon />}
                                 >
                                     {transl("Edit phone number")}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                    <div className="col-span-1">
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            {transl("Rank")}
+                        </p>
+                        {isEditingRank ? (
+                            <form
+                                onSubmit={handleRankSave}
+                                className="flex items-end gap-2"
+                            >
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    variant="outlined"
+                                    value={rankValue}
+                                    onChange={(e) =>
+                                        setRankValue(e.target.value)
+                                    }
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={
+                                        userProfileUpdateMutation.isLoading
+                                    }
+                                >
+                                    {transl("save")}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="text"
+                                    onClick={handleRankCancel}
+                                    disabled={
+                                        userProfileUpdateMutation.isLoading
+                                    }
+                                >
+                                    {transl("cancel")}
+                                </Button>
+                            </form>
+                        ) : (
+                            <div className="flex items-center gap-4">
+                                <p className="text-lg">
+                                    {rank || transl("Not provided")}
+                                </p>
+                                <Button
+                                    size="small"
+                                    variant="text"
+                                    onClick={() => setIsEditingRank(true)}
+                                    startIcon={<EditIcon />}
+                                >
+                                    {transl("Edit rank")}
                                 </Button>
                             </div>
                         )}

@@ -8,10 +8,22 @@ const storageUrl = (path) => `${process.env.REACT_APP_STORAGE_PATH}${path}`;
 const token = process.env.REACT_APP_STORAGE_AUTH_KEY;
 
 // Keep the server's message (e.g. "Only Word .docx files are supported").
-const toError = (error) =>
-    new Error(
-        error?.response?.data?.error || error?.message || "Request failed",
+const toError = (error) => {
+    const { status, data } = error?.response || {};
+    // The hosting firewall answers with an HTML page instead of our JSON.
+    if (status === 403 && typeof data === "string") {
+        return new Error("The server firewall blocked this request (403)");
+    }
+    return new Error(
+        data?.error || data?.message || error?.message || "Request failed",
     );
+};
+
+// Hostinger's firewall rejects uploads whose file name contains ' " = or ;
+// (403 before PHP runs), so the file goes up under a plain name and the
+// title keeps the real one.
+const safeUploadName = (name) =>
+    name.replace(/[^\p{L}\p{M}\p{N}._-]+/gu, "_");
 
 const postJson = async (path, payload) => {
     try {
@@ -42,7 +54,7 @@ const uploadCustomDocument = async ({ project_id, file, title }) => {
     formData.append("token", token);
     formData.append("project_id", project_id);
     formData.append("title", title || "");
-    formData.append("file", file);
+    formData.append("file", file, safeUploadName(file.name));
 
     try {
         const { data } = await axios.post(
